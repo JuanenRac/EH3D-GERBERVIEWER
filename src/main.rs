@@ -1,0 +1,169 @@
+// EH3D-GERBERVIEWER - command line.
+// Copyright (C) 2026 JuanenRac (Electro Hobby 3D). GPL-3.0-or-later.
+#![forbid(unsafe_code)]
+
+use eh3d_gerberviewer::align::{compare_boxes, holes_outside};
+use eh3d_gerberviewer::measure::{min_clearance, min_track_width, pad_centres};
+use eh3d_gerberviewer::scene::{from_excellon, from_gerber, Scene};
+use eh3d_gerberviewer::svg::{default_color, render, Layer};
+use std::env;
+use std::fs;
+use std::process::ExitCode;
+
+const HELP: &str = "eh3d-gerberview: a light viewer of Gerber layers and drill files
+
+  eh3d-gerberview render OUT.svg LAYER... [--opacity 0.8] [--margin 2]   draw the layers in one SVG picture
+  eh3d-gerberview info LAYER...                                          size, shapes and what was not drawn
+  eh3d-gerberview measure LAYER                                          narrowest track and smallest gap between pads and tracks
+  eh3d-gerberview check LAYER... [--tolerance 0.5]                       do the layers line up? are the holes inside the copper?
+
+A LAYER is a Gerber file (.gtl .gbl .gts .gbs .gto .gbo .gtp .gbp .gko .gm1 .gbr ...) or a drill file (.drl .ncd .xln .exc).";
+
+fn is_drill(name: &str) -> bool {
+    matches!(
+        name.rsplit('.')
+            .next()
+            .unwrap_or("")
+            .to_ascii_lowercase()
+            .as_str(),
+        "drl" | "ncd" | "xln" | "exc"
+    )
+}
+
+fn load(path: &str) -> Result<Scene, String> {
+    let bytes = fs::read(path).map_err(|e| format!("{path}: {e}"))?;
+    let text = String::from_utf8_lossy(&bytes);
+    Ok(if is_drill(path) {
+        from_excellon(&eh3d_parser_excellon::parse(&text))
+    } else {
+        from_gerber(&eh3d_parser_gerber::parse(&text))
+    })
+}
+
+fn flag(args: &mut Vec<String>, name: &str, default: f64) -> Result<f64, String> {
+    if let Some(i) = args.iter().position(|a| a == name) {
+        let v = args
+            .get(i + 1)
+            .ok_or_else(|| format!("{name} needs a value"))?
+            .clone();
+        args.drain(i..=i + 1);
+        return v
+            .parse::<f64>()
+            .ok()
+            .filter(|n| n.is_finite() && *n >= 0.0)
+            .ok_or_else(|| format!("{name} '{v}' is not a number of zero or more"));
+    }
+    Ok(default)
+}
+
+fn short(path: &str) -> String {
+    path.rsplit(['/', '\\']).next().unwrap_or(path).to_string()
+}
+
+fn run(mut args: Vec<String>) -> Result<(), String> {
+    if args.is_empty() || matches!(args[0].as_str(), "help" | "--help" | "-h") {
+        println!("{HELP}");
+        return Ok(());
+    }
+    let cmd = args.remove(0);
+    match cmd.as_str() {
+        "render" => {
+            let opacity = flag(&mut args, "--opacity", 0.85)?;
+            let margin = flag(&mut args, "--margin", 2.0)?;
+            if args.len() < 2 {
+                return Err("render needs an output file and at least one layer".into());
+            }
+            let out = args.remove(0);
+            let layers = args
+                .iter()
+                .map(|p| {
+                    Ok(Layer {
+                        name: short(p),
+                        scene: load(p)?,
+                        color: default_color(p).to_string(),
+                        opacity,
+                    })
+                })
+                .collect::<Result<Vec<_>, String>>()?;
+            fs::write(&out, render(&layers, margin)).map_err(|e| format!("{out}: {e}"))?;
+            println!("{} layers drawn in {out}", layers.len());
+            Ok(())
+        }
+        "info" => {
+            if args.is_empty() {
+                return Err("info needs a layer".into());
+            }
+            for p in &args {
+                let s = load(p)?;
+                let b = s.bounds();
+                println!(
+                    "{}: {} shapes, {:.3} x {:.3} mm",
+                    short(p),
+                    s.shapes.len(),
+                    b.width(),
+                    b.height()
+                );
+                for n in &s.notes {
+                    println!("  not drawn exactly: {n}");
+                }
+            }
+            Ok(())
+        }
+        "measure" => {
+            let p = args.first().ok_or("measure needs a layer")?;
+            let s = load(p)?;
+            match min_track_width(&s) {
+                Some(w) => println!("narrowest track: {w:.3} mm"),
+                None => println!("no tracks"),
+            }
+            match min_clearance(&s)? {
+                Some((g, i, j)) => println!("smallest gap: {g:.3} mm between shapes {i} and {j}"),
+                None => println!("fewer than two pads or tracks"),
+            }
+            println!("{} pads", pad_centres(&s).len());
+            Ok(())
+        }
+        "check" => {
+            let tol = flag(&mut args, "--tolerance", 0.5)?;
+            if args.is_empty() {
+                return Err("check needs layers".into());
+            }
+            let scenes = args
+                .iter()
+                .map(|p| Ok((short(p), is_drill(p), load(p)?)))
+                .collect::<Result<Vec<_>, String>>()?;
+            let boxes: Vec<_> = scenes
+                .iter()
+                .filter(|(_, d, _)| !*d)
+                .map(|(n, _, s)| (n.clone(), s.bounds()))
+                .collect();
+            let mut findings = compare_boxes(&boxes, tol);
+            if let Some((_, _, copper)) = scenes.iter().find(|(_, d, _)| !*d) {
+                for (name, _, holes) in scenes.iter().filter(|(_, d, _)| *d) {
+                    findings.extend(holes_outside(copper, holes, name));
+                }
+            }
+            if findings.is_empty() {
+                println!("the layers line up");
+                Ok(())
+            } else {
+                Err(findings
+                    .iter()
+                    .map(|f| format!("{}: {}", f.layer, f.message))
+                    .collect::<Vec<_>>()
+                    .join("\n"))
+            }
+        }
+        other => Err(format!("{other}: unknown command (see help)")),
+    }
+}
+
+fn main() -> ExitCode {
+    match run(env::args().skip(1).collect()) {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("error: {e}");
+            ExitCode::from(1)
+        }
+    }
+}

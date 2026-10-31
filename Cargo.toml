@@ -1,0 +1,26 @@
+[package]
+name = "eh3d-gerberviewer"
+version = "0.0.1"
+edition = "2021"
+rust-version = "1.82"
+description = "A light viewer of Gerber layers and drill files: SVG pictures with a colour and a transparency per layer, measures and alignment checks"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/JuanenRac/EH3D-GERBERVIEWER"
+readme = "README.md"
+
+[lib]
+name = "eh3d_gerberviewer"
+path = "src/lib.rs"
+
+[[bin]]
+name = "eh3d-gerberview"
+path = "src/main.rs"
+
+[dependencies]
+# the readers of the suite (a path dependency on the sibling repository)
+eh3d-parser-gerber = { path = "../EH3D-CORE-LIBS/crates/eh3d-parser-gerber" }
+eh3d-parser-excellon = { path = "../EH3D-CORE-LIBS/crates/eh3d-parser-excellon" }
+
+[profile.release]
+opt-level = 3
+lto = true
