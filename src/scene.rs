@@ -139,6 +139,49 @@ impl Scene {
     }
 }
 
+/// The outline of a rectangle of `w` x `h` (sides parallel to the axes) dragged from `a` to `b`: the Minkowski sum of the segment and the rectangle, a convex polygon of up to six corners.
+pub fn swept_rectangle(a: (f64, f64), b: (f64, f64), w: f64, h: f64) -> Vec<(f64, f64)> {
+    let (hx, hy) = (w / 2.0, h / 2.0);
+    let mut pts: Vec<(f64, f64)> = Vec::with_capacity(8);
+    for c in [a, b] {
+        for (sx, sy) in [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)] {
+            pts.push((c.0 + sx * hx, c.1 + sy * hy));
+        }
+    }
+    convex_hull(pts)
+}
+
+/// The convex hull, counter-clockwise, of a few points (Andrew's monotone chain).
+fn convex_hull(mut pts: Vec<(f64, f64)>) -> Vec<(f64, f64)> {
+    pts.sort_by(|p, q| p.partial_cmp(q).unwrap_or(std::cmp::Ordering::Equal));
+    pts.dedup_by(|p, q| (p.0 - q.0).abs() < 1e-12 && (p.1 - q.1).abs() < 1e-12);
+    if pts.len() < 3 {
+        return pts;
+    }
+    let cross = |o: (f64, f64), a: (f64, f64), b: (f64, f64)| {
+        (a.0 - o.0) * (b.1 - o.1) - (a.1 - o.1) * (b.0 - o.0)
+    };
+    let mut hull: Vec<(f64, f64)> = Vec::new();
+    for pass in 0..2 {
+        let start = hull.len();
+        let order: Vec<(f64, f64)> = if pass == 0 {
+            pts.clone()
+        } else {
+            pts.iter().rev().cloned().collect()
+        };
+        for q in order {
+            while hull.len() >= start + 2
+                && cross(hull[hull.len() - 2], hull[hull.len() - 1], q) <= 1e-12
+            {
+                hull.pop();
+            }
+            hull.push(q);
+        }
+        hull.pop();
+    }
+    hull
+}
+
 /// The points of an arc from `from` to `to` around the centre given as an offset from `from`.
 pub fn arc_points(
     from: (f64, f64),
@@ -263,19 +306,27 @@ pub fn from_gerber(file: &GerberFile) -> Scene {
                     }
                     pts.push(p(to));
                 } else {
+                    let ((x0, y0), (x1, y1)) = (p(from), p(to));
                     let w = match aperture {
                         Some(Aperture::Circle { diameter, .. }) => diameter * k,
-                        Some(Aperture::Rectangle { x, y, .. })
-                        | Some(Aperture::Obround { x, y, .. }) => {
-                            scene.note("a track with a rectangular pen is drawn with a round pen as wide as its narrow side");
-                            x.min(*y) * k
+                        Some(Aperture::Rectangle { x, y, .. }) => {
+                            scene.shapes.push(Shape::Region {
+                                pts: swept_rectangle((x0, y0), (x1, y1), x * k, y * k),
+                            });
+                            continue;
+                        }
+                        Some(Aperture::Obround { x, y, .. }) => {
+                            scene.note("a track with an obround pen is drawn with the rectangle that holds the pen");
+                            scene.shapes.push(Shape::Region {
+                                pts: swept_rectangle((x0, y0), (x1, y1), x * k, y * k),
+                            });
+                            continue;
                         }
                         _ => {
                             scene.note("a track with no usable aperture is not drawn");
                             continue;
                         }
                     };
-                    let ((x0, y0), (x1, y1)) = (p(from), p(to));
                     scene.shapes.push(Shape::Stroke { x0, y0, x1, y1, w });
                 }
             }

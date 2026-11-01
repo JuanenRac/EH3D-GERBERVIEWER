@@ -18,7 +18,7 @@
 
 ---
 
-**Vérification d'honnêteté - ce qui fonctionne aujourd'hui :** une bibliothèque Rust et un programme en ligne de commande (`eh3d-gerberview`) avec 14 tests exécutés sur un ordinateur : dessine des couches Gerber et des fichiers de perçage en image SVG, mesure pistes et espaces et vérifie que les couches s'alignent. Il n'a pas encore de fenêtre, n'a pas été essayé sur une machine et n'a pas été vérifié sur une collection de fichiers réels.
+**Vérification d'honnêteté - ce qui fonctionne aujourd'hui :** une bibliothèque Rust et un programme en ligne de commande (`eh3d-gerberview`) avec 15 tests exécutés sur un ordinateur : dessine des couches Gerber et des fichiers de perçage en image SVG, mesure pistes et espaces et vérifie que les couches s'alignent. Il n'a pas encore de fenêtre, n'a pas été essayé sur une machine et n'a pas été vérifié sur une collection de fichiers réels.
 
 ---
 
@@ -31,7 +31,7 @@
 |---|---|
 | Version | `0.0.1` |
 | Maturité | Échafaudage |
-| Tests | 14 |
+| Tests | 15 |
 | Pile technique | Rust |
 | Sur du matériel réel | Non essayé : rien ici n'a fonctionné sur une machine |
 
@@ -47,7 +47,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 |---|---|---|
 | Cœur | 🟡 | dessine des couches Gerber et des fichiers de perçage en image SVG, mesure pistes et espaces et vérifie que les couches s'alignent ; testé sur un ordinateur avec des entrées normales et abîmées, pas avec une collection de fichiers réels. |
 | Ligne de commande | 🟡 | `eh3d-gerberview` exécute les mêmes fonctions que la bibliothèque et affiche le résultat ; chaque erreur revient sous forme de message et de code de sortie non nul. |
-| Tests | 🟡 | 14 tests passent (`cargo test`), avec des cas normaux, des cas limites et des entrées abîmées. |
+| Tests | 🟡 | 15 tests passent (`cargo test`), avec des cas normaux, des cas limites et des entrées abîmées. |
 | Sécurité | 🟡 | Rust sûr et simple (`forbid(unsafe_code)`) : rien ne panique sur les fichiers reçus et une mauvaise valeur est une erreur avec sa raison ; pas de revue indépendante. |
 | Fenêtre | 🔴 | Prévu : la fenêtre egui commune à la suite ; aujourd'hui il n'y a que la ligne de commande. |
 | Matériel réel | 🔴 | Non essayé : rien ici n'a été exécuté sur une machine. |
@@ -55,7 +55,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 
 ## 🎯 Présentation
 
-* **Les formes** (`src/scene.rs`) : pastilles (rondes, rectangulaires, oblongues), pistes avec leur largeur, régions et arcs, le tout en millimètres quelles que soient les unités du fichier ; les trous d'un fichier de perçage deviennent des disques du diamètre de leur outil. Ce qui ne peut pas être dessiné exactement (polarité claire, répétition, macros) est listé, une fois chacun.
+* **Les formes** (`src/scene.rs`) : pastilles (rondes, rectangulaires, oblongues), pistes avec leur largeur, régions et arcs, le tout en millimètres quelles que soient les unités du fichier ; les trous d'un fichier de perçage deviennent des disques du diamètre de leur outil. Ce qui ne peut pas être dessiné exactement (polarité claire, répétition, macros) est listé, une fois chacun. Une piste tracée avec une ouverture rectangulaire est le rectangle balayé (le segment et l'ouverture, un polygone), et non une ligne à bouts ronds.
 * **L'image** (`src/svg.rs`) : chaque couche est un groupe avec sa couleur (d'après l'extension du fichier) et sa transparence, la carte vue de dessus avec y vers le haut ; une liste vide de couches donne une petite image vide, et les noms et couleurs sont échappés et vérifiés.
 * **Mesures et contrôles** (`src/measure.rs`, `src/align.rs`) : la piste la plus étroite, la distance entre deux pastilles, l'espace minimal entre pastilles rondes et pistes (bord à bord, 0 là où elles se touchent), les couches dont le centre est décalé et les trous qui ne tombent pas dans le cuivre.
 
@@ -136,7 +136,7 @@ cargo run --release -- info examples/sample.gtl examples/sample.ncd
 
 ## 🧪 Tests
 
-La suite compte 14 tests (`cargo test`, exécutés sous Windows et Linux dans le CI). Ils vérifient les cas normaux, les cas limites et les entrées abîmées : fichiers vides, bruit et fichiers coupés ne font jamais paniquer. Le CI exécute aussi `cargo fmt --check`, `cargo clippy` avec les avertissements comme erreurs et `python -I tools/ci_validate.py`.
+La suite compte 15 tests (`cargo test`, exécutés sous Windows et Linux dans le CI). Ils vérifient les cas normaux, les cas limites et les entrées abîmées : fichiers vides, bruit et fichiers coupés ne font jamais paniquer. Le CI exécute aussi `cargo fmt --check`, `cargo clippy` avec les avertissements comme erreurs et `python -I tools/ci_validate.py`.
 
 ## 🏗️ Compilation et publication
 

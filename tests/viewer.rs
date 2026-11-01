@@ -310,3 +310,30 @@ fn a_hole_outside_the_copper_is_reported() {
         2
     );
 }
+
+#[test]
+fn a_track_with_a_rectangular_pen_is_the_swept_rectangle() {
+    use eh3d_gerberviewer::scene::swept_rectangle;
+    // along an axis the result is one rectangle
+    let h = swept_rectangle((0.0, 0.0), (10.0, 0.0), 2.0, 1.0);
+    assert_eq!(h.len(), 4, "{h:?}");
+    let xs: Vec<f64> = h.iter().map(|p| p.0).collect();
+    let ys: Vec<f64> = h.iter().map(|p| p.1).collect();
+    assert!(xs.iter().cloned().fold(f64::INFINITY, f64::min) == -1.0);
+    assert!(xs.iter().cloned().fold(f64::NEG_INFINITY, f64::max) == 11.0);
+    assert!(ys.iter().cloned().fold(f64::NEG_INFINITY, f64::max) == 0.5);
+    // on the diagonal the corners of the rectangle at both ends make a hexagon, not a round-ended line
+    let d = swept_rectangle((0.0, 0.0), (10.0, 10.0), 2.0, 1.0);
+    assert_eq!(d.len(), 6, "{d:?}");
+    // a segment of no length is the pen itself
+    assert_eq!(swept_rectangle((3.0, 3.0), (3.0, 3.0), 2.0, 1.0).len(), 4);
+
+    let text = "%FSLAX24Y24*%\n%MOMM*%\n%ADD11R,2.0X1.0*%\nD11*\nX00000Y00000D02*\nX100000Y100000D01*\nM02*\n";
+    let s = from_gerber(&eh3d_parser_gerber::parse(text));
+    assert!(s.shapes.iter().all(|x| !matches!(x, Shape::Stroke { .. })));
+    match &s.shapes[0] {
+        Shape::Region { pts } => assert_eq!(pts.len(), 6),
+        other => panic!("{other:?}"),
+    }
+    assert!(s.notes.is_empty(), "{:?}", s.notes);
+}

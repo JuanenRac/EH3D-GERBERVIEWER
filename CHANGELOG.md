@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Rectangular pens:** a track drawn with a rectangular or obround aperture is drawn as the swept rectangle (a polygon) instead of a round-ended line as wide as the narrow side of the pen.
+
 ## [0.0.1] - Gerber layers and drill files drawn as an SVG picture, with measures and alignment checks
 
 - **The shapes:** pads, tracks, regions and arcs in millimetres whatever the units of the file; the holes of a drill file as discs; what cannot be drawn exactly is listed once.
