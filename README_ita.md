@@ -55,7 +55,7 @@ Ogni riga è una parte di questo repository e il semaforo dice a che punto è og
 
 ## 🎯 Panoramica
 
-* **Le forme** (`src/scene.rs`): pad (tondi, rettangolari, ovali), piste con la loro larghezza, regioni e archi, tutto in millimetri qualunque siano le unità del file; i fori di un file di foratura diventano dischi del diametro del loro utensile. Ciò che non si può disegnare esattamente (polarità chiara, ripetizione, macro) è elencato, una volta ciascuno. Una pista tracciata con un'apertura rettangolare è il rettangolo spazzato (il segmento e l'apertura, un poligono), non una linea con estremità tonde.
+* **Le forme** (`src/scene.rs`, `eh3d-geometry`): pad (tondi, rettangolari, ovali), piste con la loro larghezza, regioni e archi, tutto in millimetri qualunque siano le unità del file; i fori di un file di foratura diventano dischi del diametro del loro utensile. Ciò che non si può disegnare esattamente (polarità chiara, ripetizione, macro) è elencato, una volta ciascuno. Una pista tracciata con un'apertura rettangolare è il rettangolo spazzato (il segmento e l'apertura, un poligono), non una linea con estremità tonde.
 * **L'immagine** (`src/svg.rs`): ogni livello è un gruppo con il suo colore (dall'estensione del file) e la sua trasparenza, la scheda vista dall'alto con y verso l'alto; un elenco vuoto di livelli dà una piccola immagine vuota, e nomi e colori sono protetti e verificati.
 * **Misure e controlli** (`src/measure.rs`, `src/align.rs`): la pista più stretta, la distanza tra due pad, lo spazio minimo tra pad tondi e piste (da bordo a bordo, 0 dove si toccano), i livelli con il centro spostato e i fori che non cadono dentro il rame.
 

@@ -55,7 +55,7 @@ Cada línea es una parte de este repositorio y la luz dice hasta dónde llega ho
 
 ## 🎯 Resumen
 
-* **Las formas** (`src/scene.rs`): pads (redondos, rectangulares, ovalados), pistas con su ancho, regiones y arcos, todo en milímetros sean cuales sean las unidades del fichero; los agujeros de un fichero de taladrado son discos del diámetro de su herramienta. Lo que no se puede dibujar con exactitud (polaridad clara, repetición, macros) se lista, una vez cada cosa. Una pista trazada con una apertura rectangular es el rectángulo barrido (el segmento y la apertura, un polígono), no una línea de extremos redondos.
+* **Las formas** (`src/scene.rs`, `eh3d-geometry`): pads (redondos, rectangulares, ovalados), pistas con su ancho, regiones y arcos, todo en milímetros sean cuales sean las unidades del fichero; los agujeros de un fichero de taladrado son discos del diámetro de su herramienta. Lo que no se puede dibujar con exactitud (polaridad clara, repetición, macros) se lista, una vez cada cosa. Una pista trazada con una apertura rectangular es el rectángulo barrido (el segmento y la apertura, un polígono), no una línea de extremos redondos.
 * **La imagen** (`src/svg.rs`): cada capa es un grupo con su color (por la extensión del fichero) y su transparencia, la placa vista desde arriba con y hacia arriba; una lista vacía de capas da una imagen pequeña vacía, y los nombres y colores se escapan y comprueban.
 * **Medidas y comprobaciones** (`src/measure.rs`, `src/align.rs`): la pista más estrecha, la distancia entre dos pads, el hueco mínimo entre pads redondos y pistas (de borde a borde, 0 donde se tocan), las capas con el centro desplazado y los agujeros que no caen dentro del cobre.
 

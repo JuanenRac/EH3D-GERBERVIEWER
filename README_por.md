@@ -55,7 +55,7 @@ Cada linha é uma parte deste repositório e a luz diz até onde chega hoje. É 
 
 ## 🎯 Visão geral
 
-* **As formas** (`src/scene.rs`): pads (redondos, retangulares, ovais), pistas com a sua largura, regiões e arcos, tudo em milímetros sejam quais forem as unidades do ficheiro; os furos de um ficheiro de furação são discos do diâmetro da sua ferramenta. O que não se consegue desenhar com exatidão (polaridade clara, repetição, macros) é listado, uma vez cada. Uma pista traçada com uma abertura retangular é o retângulo varrido (o segmento e a abertura, um polígono), não uma linha de pontas redondas.
+* **As formas** (`src/scene.rs`, `eh3d-geometry`): pads (redondos, retangulares, ovais), pistas com a sua largura, regiões e arcos, tudo em milímetros sejam quais forem as unidades do ficheiro; os furos de um ficheiro de furação são discos do diâmetro da sua ferramenta. O que não se consegue desenhar com exatidão (polaridade clara, repetição, macros) é listado, uma vez cada. Uma pista traçada com uma abertura retangular é o retângulo varrido (o segmento e a abertura, um polígono), não uma linha de pontas redondas.
 * **A imagem** (`src/svg.rs`): cada camada é um grupo com a sua cor (pela extensão do ficheiro) e transparência, a placa vista de cima com y para cima; uma lista vazia de camadas dá uma imagem pequena vazia, e os nomes e cores são escapados e verificados.
 * **Medições e verificações** (`src/measure.rs`, `src/align.rs`): a pista mais estreita, a distância entre dois pads, a folga mínima entre pads redondos e pistas (de borda a borda, 0 onde se tocam), as camadas com o centro deslocado e os furos que não caem dentro do cobre.
 

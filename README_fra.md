@@ -55,7 +55,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 
 ## 🎯 Présentation
 
-* **Les formes** (`src/scene.rs`) : pastilles (rondes, rectangulaires, oblongues), pistes avec leur largeur, régions et arcs, le tout en millimètres quelles que soient les unités du fichier ; les trous d'un fichier de perçage deviennent des disques du diamètre de leur outil. Ce qui ne peut pas être dessiné exactement (polarité claire, répétition, macros) est listé, une fois chacun. Une piste tracée avec une ouverture rectangulaire est le rectangle balayé (le segment et l'ouverture, un polygone), et non une ligne à bouts ronds.
+* **Les formes** (`src/scene.rs`, `eh3d-geometry`) : pastilles (rondes, rectangulaires, oblongues), pistes avec leur largeur, régions et arcs, le tout en millimètres quelles que soient les unités du fichier ; les trous d'un fichier de perçage deviennent des disques du diamètre de leur outil. Ce qui ne peut pas être dessiné exactement (polarité claire, répétition, macros) est listé, une fois chacun. Une piste tracée avec une ouverture rectangulaire est le rectangle balayé (le segment et l'ouverture, un polygone), et non une ligne à bouts ronds.
 * **L'image** (`src/svg.rs`) : chaque couche est un groupe avec sa couleur (d'après l'extension du fichier) et sa transparence, la carte vue de dessus avec y vers le haut ; une liste vide de couches donne une petite image vide, et les noms et couleurs sont échappés et vérifiés.
 * **Mesures et contrôles** (`src/measure.rs`, `src/align.rs`) : la piste la plus étroite, la distance entre deux pastilles, l'espace minimal entre pastilles rondes et pistes (bord à bord, 0 là où elles se touchent), les couches dont le centre est décalé et les trous qui ne tombent pas dans le cuivre.
 

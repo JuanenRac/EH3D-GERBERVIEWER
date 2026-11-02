@@ -55,7 +55,7 @@ Jede Zeile ist ein Teil dieses Repositorys, und die Ampel sagt, wie weit er heut
 
 ## 🎯 Überblick
 
-* **Die Formen** (`src/scene.rs`): Pads (rund, rechteckig, oval), Leiterbahnen mit Breite, Flächen und Bögen, alles in Millimetern, egal in welchen Einheiten die Datei steht; die Löcher einer Bohrdatei werden zu Scheiben im Durchmesser ihres Werkzeugs. Was sich nicht exakt zeichnen lässt (Clear-Polarität, Step and Repeat, Makros), wird je einmal aufgelistet. Eine mit rechteckiger Blende gezeichnete Leiterbahn ist das überstrichene Rechteck (Strecke und Blende, ein Polygon), keine Linie mit runden Enden.
+* **Die Formen** (`src/scene.rs`, `eh3d-geometry`): Pads (rund, rechteckig, oval), Leiterbahnen mit Breite, Flächen und Bögen, alles in Millimetern, egal in welchen Einheiten die Datei steht; die Löcher einer Bohrdatei werden zu Scheiben im Durchmesser ihres Werkzeugs. Was sich nicht exakt zeichnen lässt (Clear-Polarität, Step and Repeat, Makros), wird je einmal aufgelistet. Eine mit rechteckiger Blende gezeichnete Leiterbahn ist das überstrichene Rechteck (Strecke und Blende, ein Polygon), keine Linie mit runden Enden.
 * **Das Bild** (`src/svg.rs`): Jede Lage ist eine Gruppe mit eigener Farbe (nach der Dateiendung) und Transparenz, die Platine von oben mit y nach oben; eine leere Lagenliste ergibt ein kleines leeres Bild, Namen und Farben werden maskiert und geprüft.
 * **Messungen und Prüfungen** (`src/measure.rs`, `src/align.rs`): die schmalste Leiterbahn, der Abstand zweier Pads, der kleinste Abstand zwischen runden Pads und Bahnen (Rand zu Rand, 0 bei Berührung), Lagen mit verschobener Mitte und Löcher außerhalb des Kupfers.
 

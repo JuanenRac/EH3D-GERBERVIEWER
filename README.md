@@ -55,7 +55,7 @@ Each line is one part of this repository and the light says how far it is today.
 
 ## 🎯 Overview
 
-* **The shapes** (`src/scene.rs`): pads (round, rectangular, obround), tracks with their width, regions and arcs, all in millimetres whatever the units of the file; the holes of a drill file become discs of the diameter of their tool. What cannot be drawn exactly (clear polarity, step and repeat, macro apertures) is listed, once each. A track drawn with a rectangular pen is the swept rectangle (the segment and the pen, a polygon), not a line with round ends.
+* **The shapes** (`src/scene.rs`, `eh3d-geometry`): pads (round, rectangular, obround), tracks with their width, regions and arcs, all in millimetres whatever the units of the file; the holes of a drill file become discs of the diameter of their tool. What cannot be drawn exactly (clear polarity, step and repeat, macro apertures) is listed, once each. A track drawn with a rectangular pen is the swept rectangle (the segment and the pen, a polygon), not a line with round ends.
 * **The picture** (`src/svg.rs`): every layer is a group with its own colour (from the extension of the file) and transparency, the board seen from above with y up; an empty list of layers gives a small empty picture, and names and colours are escaped and checked.
 * **Measures and checks** (`src/measure.rs`, `src/align.rs`): the narrowest track, the distance between two pads, the smallest gap between round pads and tracks (edge to edge, 0 where they touch), the layers whose centre is off, and the holes that are not inside the copper.
 
