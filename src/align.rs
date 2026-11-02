@@ -11,10 +11,12 @@ pub struct Finding {
 /// Compares the centre and the size of every layer with the first one. `tolerance_mm` is how much a centre may differ.
 pub fn compare_boxes(layers: &[(String, Bounds)], tolerance_mm: f64) -> Vec<Finding> {
     let mut out = Vec::new();
-    let Some((first_name, first)) = layers.iter().find(|(_, b)| !b.is_empty()) else {
+    let Some((first_at, (first_name, first))) =
+        layers.iter().enumerate().find(|(_, (_, b))| !b.is_empty())
+    else {
         return out;
     };
-    for (name, b) in layers {
+    for (at, (name, b)) in layers.iter().enumerate() {
         if b.is_empty() {
             out.push(Finding {
                 layer: name.clone(),
@@ -22,7 +24,8 @@ pub fn compare_boxes(layers: &[(String, Bounds)], tolerance_mm: f64) -> Vec<Find
             });
             continue;
         }
-        if name == first_name {
+        // the reference is skipped by its place in the list: two layers can have the same name
+        if at == first_at {
             continue;
         }
         let (c0, c1) = (first.center(), b.center());

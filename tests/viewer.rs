@@ -337,3 +337,474 @@ fn a_track_with_a_rectangular_pen_is_the_swept_rectangle() {
     }
     assert!(s.notes.is_empty(), "{:?}", s.notes);
 }
+
+// ---- more edges: tolerances, the same name twice, measures that touch, colours and the command line ----
+
+use eh3d_gerberviewer::measure::MAX_PAIRS_SHAPES;
+use eh3d_gerberviewer::scene::Scene;
+use std::process::Command;
+
+fn boxed(x0: f64, y0: f64, x1: f64, y1: f64) -> Bounds {
+    let mut b = Bounds::empty();
+    b.include(x0, y0);
+    b.include(x1, y1);
+    b
+}
+
+type Track = ((f64, f64), (f64, f64), f64);
+
+fn strokes(list: &[Track]) -> Scene {
+    Scene {
+        shapes: list
+            .iter()
+            .map(|&((x0, y0), (x1, y1), w)| Shape::Stroke { x0, y0, x1, y1, w })
+            .collect(),
+        notes: vec![],
+    }
+}
+
+#[test]
+fn a_centre_off_by_exactly_the_tolerance_is_fine_and_a_hair_more_is_reported_with_its_signs() {
+    let layers = |dx: f64| {
+        vec![
+            ("a.gtl".to_string(), boxed(0.0, 0.0, 10.0, 10.0)),
+            ("b.gtl".to_string(), boxed(dx, 0.0, 10.0 + dx, 10.0)),
+        ]
+    };
+    assert!(compare_boxes(&layers(0.5), 0.5).is_empty());
+    let f = compare_boxes(&layers(-0.5001), 0.5);
+    assert_eq!(f.len(), 1);
+    assert_eq!(f[0].layer, "b.gtl");
+    assert!(
+        f[0].message.contains("-0.500 mm in x")
+            && f[0].message.contains("+0.000 mm in y")
+            && f[0].message.contains("a.gtl"),
+        "{}",
+        f[0].message
+    );
+}
+
+#[test]
+fn an_empty_layer_is_named_and_the_first_layer_with_something_is_the_reference() {
+    let layers = vec![
+        ("empty.gko".to_string(), Bounds::empty()),
+        ("a.gtl".to_string(), boxed(0.0, 0.0, 10.0, 10.0)),
+        ("b.gbl".to_string(), boxed(0.0, 0.0, 10.0, 10.0)),
+    ];
+    let f = compare_boxes(&layers, 0.1);
+    assert_eq!(f.len(), 1);
+    assert_eq!(
+        (f[0].layer.as_str(), f[0].message.as_str()),
+        ("empty.gko", "has nothing to draw")
+    );
+    assert!(compare_boxes(&[], 0.1).is_empty());
+}
+
+#[test]
+fn two_layers_with_the_same_name_are_both_compared() {
+    // the same file name in two folders: the second one is a different layer and it does not line up
+    let layers = vec![
+        ("top.gtl".to_string(), boxed(0.0, 0.0, 10.0, 10.0)),
+        ("top.gtl".to_string(), boxed(50.0, 0.0, 60.0, 10.0)),
+    ];
+    let f = compare_boxes(&layers, 0.5);
+    assert_eq!(f.len(), 1, "{f:?}");
+}
+
+#[test]
+fn a_hole_that_touches_the_edge_of_the_copper_is_inside_and_one_beyond_it_is_not() {
+    let copper = Scene {
+        shapes: vec![Shape::Rect {
+            x: 5.0,
+            y: 5.0,
+            w: 10.0,
+            h: 10.0,
+        }],
+        notes: vec![],
+    };
+    let holes = |x: f64, r: f64| Scene {
+        shapes: vec![Shape::Disc { x, y: 5.0, r }],
+        notes: vec![],
+    };
+    assert!(
+        holes_outside(&copper, &holes(1.0, 1.0), "d.drl").is_empty(),
+        "touching the edge is inside"
+    );
+    let out = holes_outside(&copper, &holes(0.99, 1.0), "d.drl");
+    assert_eq!(out.len(), 1);
+    assert_eq!(out[0].layer, "d.drl");
+    assert!(
+        out[0].message.contains("2.00 mm") && out[0].message.contains("0.990"),
+        "{}",
+        out[0].message
+    );
+    // a drill file has discs only: anything else in it is not a hole
+    let odd = Scene {
+        shapes: vec![Shape::Rect {
+            x: 99.0,
+            y: 99.0,
+            w: 1.0,
+            h: 1.0,
+        }],
+        notes: vec![],
+    };
+    assert!(holes_outside(&copper, &odd, "d.drl").is_empty());
+    // copper with nothing in it: every hole is outside
+    assert_eq!(
+        holes_outside(&Scene::default(), &holes(1.0, 0.4), "d.drl").len(),
+        1
+    );
+}
+
+#[test]
+fn collinear_overlapping_and_touching_tracks_leave_no_gap_and_parallel_ones_leave_the_exact_gap() {
+    let overlap = strokes(&[
+        ((0.0, 0.0), (10.0, 0.0), 0.2),
+        ((5.0, 0.0), (15.0, 0.0), 0.2),
+    ]);
+    assert_eq!(min_clearance(&overlap).unwrap().unwrap().0, 0.0);
+    let end_to_end = strokes(&[((0.0, 0.0), (5.0, 0.0), 0.2), ((5.0, 0.0), (9.0, 3.0), 0.2)]);
+    assert_eq!(min_clearance(&end_to_end).unwrap().unwrap().0, 0.0);
+    let parallel = strokes(&[
+        ((0.0, 0.0), (10.0, 0.0), 0.2),
+        ((2.0, 1.0), (8.0, 1.0), 0.4),
+    ]);
+    assert!((min_clearance(&parallel).unwrap().unwrap().0 - 0.7).abs() < 1e-9);
+    // a track and a round pad at the side of it
+    let mut mixed = strokes(&[((0.0, 0.0), (10.0, 0.0), 0.2)]);
+    mixed.shapes.push(Shape::Disc {
+        x: 5.0,
+        y: 2.0,
+        r: 0.5,
+    });
+    assert!((min_clearance(&mixed).unwrap().unwrap().0 - 1.4).abs() < 1e-9);
+    // a track of no length is a point with a width
+    let dot = strokes(&[((0.0, 0.0), (0.0, 0.0), 1.0), ((3.0, 0.0), (3.0, 0.0), 1.0)]);
+    assert!((min_clearance(&dot).unwrap().unwrap().0 - 2.0).abs() < 1e-9);
+}
+
+#[test]
+fn the_pair_with_the_smallest_gap_is_named_by_the_place_of_its_shapes_in_the_layer() {
+    let mut s = Scene {
+        shapes: vec![Shape::Rect {
+            x: 0.0,
+            y: 0.0,
+            w: 1.0,
+            h: 1.0,
+        }],
+        notes: vec![],
+    };
+    s.shapes.push(Shape::Disc {
+        x: 0.0,
+        y: 10.0,
+        r: 0.5,
+    });
+    s.shapes.push(Shape::Disc {
+        x: 10.0,
+        y: 10.0,
+        r: 0.5,
+    });
+    s.shapes.push(Shape::Disc {
+        x: 12.0,
+        y: 10.0,
+        r: 0.5,
+    });
+    let (gap, i, j) = min_clearance(&s).unwrap().unwrap();
+    assert_eq!(
+        (i, j),
+        (2, 3),
+        "the rectangle is not compared but it still counts as shape 0"
+    );
+    assert!((gap - 1.0).abs() < 1e-9);
+    assert_eq!(
+        min_clearance(&Scene {
+            shapes: vec![Shape::Disc {
+                x: 0.0,
+                y: 0.0,
+                r: 1.0
+            }],
+            notes: vec![]
+        })
+        .unwrap(),
+        None
+    );
+}
+
+#[test]
+fn too_many_shapes_to_compare_pair_by_pair_is_an_error_that_says_how_many() {
+    let many = Scene {
+        shapes: (0..=MAX_PAIRS_SHAPES)
+            .map(|i| Shape::Disc {
+                x: i as f64,
+                y: 0.0,
+                r: 0.1,
+            })
+            .collect(),
+        notes: vec![],
+    };
+    let e = min_clearance(&many).unwrap_err();
+    assert!(e.contains(&(MAX_PAIRS_SHAPES + 1).to_string()), "{e}");
+}
+
+#[test]
+fn the_pad_numbers_ignore_tracks_and_regions_and_count_every_flashed_shape() {
+    let s = Scene {
+        shapes: vec![
+            Shape::Stroke {
+                x0: 0.0,
+                y0: 0.0,
+                x1: 1.0,
+                y1: 1.0,
+                w: 0.1,
+            },
+            Shape::Disc {
+                x: 1.0,
+                y: 1.0,
+                r: 0.1,
+            },
+            Shape::Region {
+                pts: vec![(0.0, 0.0), (1.0, 0.0), (1.0, 1.0)],
+            },
+            Shape::Obround {
+                x: 2.0,
+                y: 2.0,
+                w: 1.0,
+                h: 0.5,
+            },
+            Shape::Rect {
+                x: 3.0,
+                y: 3.0,
+                w: 1.0,
+                h: 0.5,
+            },
+        ],
+        notes: vec![],
+    };
+    assert_eq!(pad_centres(&s), vec![(1.0, 1.0), (2.0, 2.0), (3.0, 3.0)]);
+    assert!((centre_distance(&s, 0, 2).unwrap() - 8.0_f64.sqrt()).abs() < 1e-12);
+    assert_eq!(centre_distance(&s, 1, 1).unwrap(), 0.0);
+    assert!(centre_distance(&s, 3, 0)
+        .unwrap_err()
+        .contains("the layer has 3"));
+    assert_eq!(
+        min_track_width(&strokes(&[
+            ((0.0, 0.0), (1.0, 0.0), 0.3),
+            ((0.0, 1.0), (1.0, 1.0), 0.15),
+            ((0.0, 2.0), (1.0, 2.0), 0.2)
+        ])),
+        Some(0.15)
+    );
+}
+
+fn picture(color: &str, opacity: f64, name: &str, margin: f64) -> String {
+    let layer = Layer {
+        name: name.to_string(),
+        scene: Scene {
+            shapes: vec![Shape::Disc {
+                x: 5.0,
+                y: 5.0,
+                r: 1.0,
+            }],
+            notes: vec![],
+        },
+        color: color.to_string(),
+        opacity,
+    };
+    render(&[layer], margin)
+}
+
+#[test]
+fn a_colour_that_is_not_six_hex_digits_is_the_grey_and_the_opacity_is_kept_in_range() {
+    for bad in [
+        "red",
+        "#12345",
+        "#1234567",
+        "#12345g",
+        "123456",
+        "",
+        "url(#x)\" onload=\"x",
+    ] {
+        let svg = picture(bad, 1.0, "l", 1.0);
+        assert!(svg.contains("fill=\"#b0b0b0\""), "{bad:?}");
+        assert!(!svg.contains("onload"), "{bad:?}");
+    }
+    assert!(picture("#AbCdEf", 1.0, "l", 1.0).contains("fill=\"#AbCdEf\""));
+    for (given, shown) in [
+        (0.5, "opacity=\"0.5\""),
+        (7.0, "opacity=\"1\""),
+        (-3.0, "opacity=\"0\""),
+        (f64::NAN, "opacity=\"1\""),
+        (f64::INFINITY, "opacity=\"1\""),
+    ] {
+        assert!(
+            picture("#ffffff", given, "l", 1.0).contains(shown),
+            "{given}"
+        );
+    }
+}
+
+#[test]
+fn the_name_of_a_layer_cannot_break_out_of_the_attribute() {
+    let svg = picture("#ffffff", 1.0, "a\"b<c>&d", 1.0);
+    assert!(svg.contains("id=\"a&quot;b&lt;c&gt;&amp;d\""), "{svg}");
+    assert_eq!(svg.matches("<g ").count(), 1);
+}
+
+#[test]
+fn the_view_box_has_the_margin_and_the_board_flipped_so_that_y_is_up() {
+    let svg = picture("#ffffff", 1.0, "l", 2.0);
+    // the disc spans 4..6 in both axes: with a margin of 2 the box is 6 x 6 from x 2, and y from -8 (the flipped top)
+    assert!(svg.contains("viewBox=\"2 -8 6 6\""), "{svg}");
+    assert!(svg.contains("transform=\"scale(1,-1)\""));
+    for bad in [-5.0, f64::NAN] {
+        assert!(
+            picture("#ffffff", 1.0, "l", bad).contains("viewBox=\"4 -6 2 2\""),
+            "a margin that makes no sense is no margin: {bad}"
+        );
+    }
+}
+
+#[test]
+fn the_picture_is_the_same_every_time_and_has_balanced_groups() {
+    let a = picture("#ffffff", 0.5, "l", 1.0);
+    assert_eq!(a, picture("#ffffff", 0.5, "l", 1.0));
+    assert_eq!(a.matches("<g ").count(), a.matches("</g>").count());
+    assert!(a.starts_with("<svg ") && a.ends_with("</svg>\n"));
+}
+
+#[test]
+fn the_colour_of_a_layer_comes_from_the_last_extension_in_any_case() {
+    assert_eq!(default_color("BOARD.GTL"), default_color("board.gtl"));
+    assert_eq!(default_color("a.v2.gbl"), default_color("x.gbl"));
+    assert_eq!(default_color("noextension"), "#b0b0b0");
+    assert_eq!(
+        default_color("gtl"),
+        default_color("x.gtl"),
+        "a name that is only an extension is that extension"
+    );
+    assert_eq!(default_color("x.gtl.bak"), "#b0b0b0");
+    assert_ne!(default_color("x.gtl"), default_color("x.gbl"));
+    assert_eq!(default_color("x.gts"), default_color("x.gbs"));
+}
+
+fn viewer(args: &[&str]) -> (Option<i32>, String, String) {
+    let out = Command::new(env!("CARGO_BIN_EXE_eh3d-gerberview"))
+        .args(args)
+        .output()
+        .unwrap();
+    (
+        out.status.code(),
+        String::from_utf8_lossy(&out.stdout).into_owned(),
+        String::from_utf8_lossy(&out.stderr).into_owned(),
+    )
+}
+
+fn scratch(name: &str) -> std::path::PathBuf {
+    let dir = std::env::temp_dir().join(format!("eh3d_viewer_{}_{name}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    dir
+}
+
+#[test]
+fn the_command_line_draws_measures_and_checks_layers() {
+    let dir = scratch("cli");
+    let (top, bottom, drill) = (
+        dir.join("top.gtl"),
+        dir.join("bottom.gbl"),
+        dir.join("holes.drl"),
+    );
+    std::fs::write(&top, COPPER).unwrap();
+    std::fs::write(&bottom, COPPER).unwrap();
+    std::fs::write(&drill, DRILL).unwrap();
+    let svg = dir.join("out.svg");
+    let (c, o, e) = viewer(&[
+        "render",
+        svg.to_str().unwrap(),
+        top.to_str().unwrap(),
+        bottom.to_str().unwrap(),
+        drill.to_str().unwrap(),
+        "--opacity",
+        "0.5",
+    ]);
+    assert_eq!(c, Some(0), "{e}");
+    assert!(o.contains("3 layers drawn"), "{o}");
+    let text = std::fs::read_to_string(&svg).unwrap();
+    assert_eq!(text.matches("<g ").count(), 3);
+    assert!(text.contains("id=\"holes.drl\"") && text.contains("opacity=\"0.5\""));
+    let (c, o, _) = viewer(&["measure", top.to_str().unwrap()]);
+    assert_eq!(c, Some(0));
+    assert!(
+        o.contains("narrowest track: 0.500 mm") && o.contains("3 pads"),
+        "{o}"
+    );
+    let (c, o, e) = viewer(&["check", top.to_str().unwrap(), bottom.to_str().unwrap()]);
+    assert_eq!(c, Some(0), "{e}");
+    assert!(o.contains("the layers line up"));
+    let (c, _, e) = viewer(&["info", top.to_str().unwrap(), drill.to_str().unwrap()]);
+    assert_eq!(c, Some(0), "{e}");
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn the_command_line_fails_with_one_line_per_finding_when_a_hole_is_outside_the_copper() {
+    let dir = scratch("cli_check");
+    let (top, drill) = (dir.join("top.gtl"), dir.join("holes.drl"));
+    std::fs::write(&top, COPPER).unwrap();
+    std::fs::write(
+        &drill,
+        "M48\nMETRIC\nT1C0.8\n%\nT1\nX500.000Y500.000\nX005.000Y005.000\nM30\n",
+    )
+    .unwrap();
+    let (c, _, e) = viewer(&["check", top.to_str().unwrap(), drill.to_str().unwrap()]);
+    assert_eq!(c, Some(1));
+    assert_eq!(
+        e.lines()
+            .filter(|l| l.contains("is not inside the copper"))
+            .count(),
+        1,
+        "{e}"
+    );
+    assert!(e.contains("holes.drl:"));
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn the_command_line_names_what_is_missing_or_wrong() {
+    let dir = scratch("cli_errors");
+    let top = dir.join("top.gtl");
+    std::fs::write(&top, COPPER).unwrap();
+    let t = top.to_str().unwrap();
+    let none = dir.join("none.gtl");
+    let out = dir.join("o.svg");
+    for (args, word) in [
+        (vec!["render", out.to_str().unwrap()], "at least one layer"),
+        (
+            vec!["render", out.to_str().unwrap(), none.to_str().unwrap()],
+            "none.gtl",
+        ),
+        (
+            vec!["render", out.to_str().unwrap(), t, "--opacity", "-1"],
+            "--opacity",
+        ),
+        (
+            vec!["render", out.to_str().unwrap(), t, "--margin", "wide"],
+            "--margin",
+        ),
+        (
+            vec!["render", out.to_str().unwrap(), t, "--margin"],
+            "needs a value",
+        ),
+        (vec!["info"], "needs a layer"),
+        (vec!["measure"], "needs a layer"),
+        (vec!["check"], "needs layers"),
+        (vec!["check", t, "--tolerance", "nan"], "--tolerance"),
+        (vec!["frobnicate"], "unknown command"),
+    ] {
+        let (c, _, e) = viewer(&args);
+        assert_eq!(c, Some(1), "{args:?}");
+        assert!(e.starts_with("error:") && e.contains(word), "{args:?}: {e}");
+    }
+    assert!(!out.exists(), "nothing is written after an error");
+    let _ = std::fs::remove_dir_all(&dir);
+}
