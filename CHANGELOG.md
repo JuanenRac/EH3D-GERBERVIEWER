@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.0.3] - Shapes from the shared geometry crate
+
 - **The shapes come from the shared geometry crate:** `scene` re-exports `Scene`, `Shape`, `Bounds` and the conversions of `eh3d-geometry`, so the public paths do not change and the CAM programs share the same types.
 
 ## [0.0.2] - Notices by code and bytes reading

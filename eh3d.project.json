@@ -2,7 +2,7 @@
   "schema_version": "1.1",
   "ecosystem": "EH3D",
   "name": "EH3D-GERBERVIEWER",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "role": "tool",
   "stack": "rust",
   "technologies": [
@@ -21,7 +21,7 @@
     "EH3D-CORE-LIBS"
   ],
   "build": "cargo build --release; cargo test",
-  "notes": "Scaffolding v0.0.2: a library and a command line that turn Gerber layers and Excellon drill files (read with the readers of EH3D-CORE-LIBS) into shapes in millimetres, draw them as one SVG picture with a colour and a transparency per layer, measure the narrowest track and the smallest gap between round pads and tracks, and check that the layers line up and that the holes are inside the copper. No window and no GPU drawing yet; clear polarity, step and repeat and macro apertures are noted, not drawn; nothing has been tried on real production files.",
+  "notes": "Scaffolding v0.0.3: a library and a command line that turn Gerber layers and Excellon drill files (read with the readers of EH3D-CORE-LIBS) into shapes in millimetres, draw them as one SVG picture with a colour and a transparency per layer, measure the narrowest track and the smallest gap between round pads and tracks, and check that the layers line up and that the holes are inside the copper. No window and no GPU drawing yet; clear polarity, step and repeat and macro apertures are noted, not drawn; nothing has been tried on real production files.",
   "native_version": {
     "file": "Cargo.toml",
     "pattern": "^version\\s*=\\s*\"(\\d+\\.\\d+\\.\\d+)\""
