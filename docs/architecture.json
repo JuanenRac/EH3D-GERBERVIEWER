@@ -40,8 +40,7 @@
         "a Gerber or drill file"
       ],
       "code": [
-        "../EH3D-CORE-LIBS/crates/eh3d-geometry/src/scene.rs::pub fn from_gerber",
-        "../EH3D-CORE-LIBS/crates/eh3d-geometry/src/scene.rs::pub fn from_excellon"
+        "src/scene.rs::pub use eh3d_geometry::scene::*;"
       ]
     },
     {
