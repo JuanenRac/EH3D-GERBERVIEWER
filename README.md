@@ -18,7 +18,7 @@
 
 ---
 
-**Honesty check - what actually runs today:** a Rust library and a command line program (`eh3d-gerberview`) with 31 tests that run on a computer: draws Gerber layers and drill files as an SVG picture, measures tracks and gaps and checks that the layers line up. It has no window yet, it has not been tried on a machine and it has not been checked against a collection of real files.
+**Honesty check - what actually runs today:** a Rust library and a command line program (`eh3d-gerberview`) with 32 tests that run on a computer: draws Gerber layers and drill files as an SVG picture, measures tracks and gaps and checks that the layers line up. It has no window yet, it has not been tried on a machine and it has not been checked against a collection of real files.
 
 ---
 
@@ -31,7 +31,7 @@
 |---|---|
 | Version | `0.0.3` |
 | Maturity | Scaffolding |
-| Tests | 31 |
+| Tests | 32 |
 | Stack | Rust |
 | On real hardware | Not tried: nothing here has run on a machine |
 
@@ -47,7 +47,7 @@ Each line is one part of this repository and the light says how far it is today.
 |---|---|---|
 | Core | 🟡 | draws Gerber layers and drill files as an SVG picture, measures tracks and gaps and checks that the layers line up; tested on a computer with normal and damaged input, not with a collection of real files. |
 | Command line | 🟡 | `eh3d-gerberview` runs the same functions as the library and prints the result; every error comes back as a message and a non-zero exit code. |
-| Tests | 🟡 | 31 tests pass (`cargo test`), with normal cases, edge cases and damaged input. |
+| Tests | 🟡 | 32 tests pass (`cargo test`), with normal cases, edge cases and damaged input. |
 | Security | 🟡 | Plain safe Rust (`forbid(unsafe_code)`): nothing panics on the files it is given and a bad value is an error with its reason; no independent review. |
 | Window | 🔴 | Planned: the egui window common to the suite; today there is only the command line. |
 | Real hardware | 🔴 | Not tried: nothing here has been run on a machine. |
@@ -57,7 +57,7 @@ Each line is one part of this repository and the light says how far it is today.
 
 * **The shapes** (`src/scene.rs`, `eh3d-geometry`): pads (round, rectangular, obround), tracks with their width, regions and arcs, all in millimetres whatever the units of the file; the holes of a drill file become discs of the diameter of their tool. What cannot be drawn exactly (clear polarity, step and repeat, macro apertures) is listed, once each. A track drawn with a rectangular pen is the swept rectangle (the segment and the pen, a polygon), not a line with round ends.
 * **The picture** (`src/svg.rs`): every layer is a group with its own colour (from the extension of the file) and transparency, the board seen from above with y up; an empty list of layers gives a small empty picture, and names and colours are escaped and checked.
-* **Measures and checks** (`src/measure.rs`, `src/align.rs`): the narrowest track, the distance between two pads, the smallest gap between round pads and tracks (edge to edge, 0 where they touch), the layers whose centre is off, and the holes that are not inside the copper.
+* **Measures and checks** (`src/measure.rs`, `src/align.rs`): the narrowest track, the distance between two pads, the smallest gap between round pads and tracks (edge to edge, 0 where they touch), the layers whose centre is off, and the holes that are not inside the copper. `check` says when there are no layers to compare instead of claiming that they line up, and `measure` takes exactly one layer.
 
 ## 🧩 Role in EH3D
 
@@ -136,7 +136,7 @@ cargo run --release -- info examples/sample.gtl examples/sample.ncd
 
 ## 🧪 Testing
 
-The suite has 31 tests (`cargo test`, run on Windows and Linux in the CI). They check the normal cases, the edge cases and damaged input: empty files, garbage and cut files never panic. The CI also runs `cargo fmt --check`, `cargo clippy` with warnings as errors and `python -I tools/ci_validate.py`.
+The suite has 32 tests (`cargo test`, run on Windows and Linux in the CI). They check the normal cases, the edge cases and damaged input: empty files, garbage and cut files never panic. The CI also runs `cargo fmt --check`, `cargo clippy` with warnings as errors and `python -I tools/ci_validate.py`.
 
 ## 🏗️ Build & Release
 

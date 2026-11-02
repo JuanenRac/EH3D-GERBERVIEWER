@@ -18,7 +18,7 @@
 
 ---
 
-**Verificação de honestidade - o que funciona hoje:** uma biblioteca Rust e um programa de linha de comandos (`eh3d-gerberview`) com 31 testes que correm num computador: desenha camadas Gerber e ficheiros de furação como imagem SVG, mede pistas e folgas e verifica se as camadas se alinham. Ainda não tem janela, não foi experimentado numa máquina e não foi verificado com uma coleção de ficheiros reais.
+**Verificação de honestidade - o que funciona hoje:** uma biblioteca Rust e um programa de linha de comandos (`eh3d-gerberview`) com 32 testes que correm num computador: desenha camadas Gerber e ficheiros de furação como imagem SVG, mede pistas e folgas e verifica se as camadas se alinham. Ainda não tem janela, não foi experimentado numa máquina e não foi verificado com uma coleção de ficheiros reais.
 
 ---
 
@@ -31,7 +31,7 @@
 |---|---|
 | Versão | `0.0.3` |
 | Maturidade | Estrutura inicial |
-| Testes | 31 |
+| Testes | 32 |
 | Tecnologias | Rust |
 | Em hardware real | Não experimentado: nada disto correu numa máquina |
 
@@ -47,7 +47,7 @@ Cada linha é uma parte deste repositório e a luz diz até onde chega hoje. É 
 |---|---|---|
 | Núcleo | 🟡 | desenha camadas Gerber e ficheiros de furação como imagem SVG, mede pistas e folgas e verifica se as camadas se alinham; testado num computador com entradas normais e danificadas, não com uma coleção de ficheiros reais. |
 | Linha de comandos | 🟡 | `eh3d-gerberview` executa as mesmas funções da biblioteca e imprime o resultado; cada erro volta como mensagem e código de saída diferente de zero. |
-| Testes | 🟡 | 31 testes passam (`cargo test`), com casos normais, casos-limite e entradas danificadas. |
+| Testes | 🟡 | 32 testes passam (`cargo test`), com casos normais, casos-limite e entradas danificadas. |
 | Segurança | 🟡 | Rust seguro e simples (`forbid(unsafe_code)`): nada entra em pânico com os ficheiros recebidos e um valor mau é um erro com o seu motivo; sem revisão independente. |
 | Janela | 🔴 | Previsto: a janela egui comum à suíte; hoje existe apenas a linha de comandos. |
 | Hardware real | 🔴 | Não experimentado: nada disto foi executado numa máquina. |
@@ -57,7 +57,7 @@ Cada linha é uma parte deste repositório e a luz diz até onde chega hoje. É 
 
 * **As formas** (`src/scene.rs`, `eh3d-geometry`): pads (redondos, retangulares, ovais), pistas com a sua largura, regiões e arcos, tudo em milímetros sejam quais forem as unidades do ficheiro; os furos de um ficheiro de furação são discos do diâmetro da sua ferramenta. O que não se consegue desenhar com exatidão (polaridade clara, repetição, macros) é listado, uma vez cada. Uma pista traçada com uma abertura retangular é o retângulo varrido (o segmento e a abertura, um polígono), não uma linha de pontas redondas.
 * **A imagem** (`src/svg.rs`): cada camada é um grupo com a sua cor (pela extensão do ficheiro) e transparência, a placa vista de cima com y para cima; uma lista vazia de camadas dá uma imagem pequena vazia, e os nomes e cores são escapados e verificados.
-* **Medições e verificações** (`src/measure.rs`, `src/align.rs`): a pista mais estreita, a distância entre dois pads, a folga mínima entre pads redondos e pistas (de borda a borda, 0 onde se tocam), as camadas com o centro deslocado e os furos que não caem dentro do cobre.
+* **Medições e verificações** (`src/measure.rs`, `src/align.rs`): a pista mais estreita, a distância entre dois pads, a folga mínima entre pads redondos e pistas (de borda a borda, 0 onde se tocam), as camadas com o centro deslocado e os furos que não caem dentro do cobre. O `check` diz quando não há camadas para comparar em vez de afirmar que coincidem, e o `measure` aceita exatamente uma camada.
 
 ## 🧩 Papel no EH3D
 
@@ -136,7 +136,7 @@ cargo run --release -- info examples/sample.gtl examples/sample.ncd
 
 ## 🧪 Testes
 
-O conjunto tem 31 testes (`cargo test`, executados em Windows e Linux no CI). Verificam os casos normais, os casos-limite e as entradas danificadas: ficheiros vazios, lixo e ficheiros cortados nunca provocam pânico. O CI executa ainda `cargo fmt --check`, `cargo clippy` com avisos como erros e `python -I tools/ci_validate.py`.
+O conjunto tem 32 testes (`cargo test`, executados em Windows e Linux no CI). Verificam os casos normais, os casos-limite e as entradas danificadas: ficheiros vazios, lixo e ficheiros cortados nunca provocam pânico. O CI executa ainda `cargo fmt --check`, `cargo clippy` com avisos como erros e `python -I tools/ci_validate.py`.
 
 ## 🏗️ Compilação e publicação
 

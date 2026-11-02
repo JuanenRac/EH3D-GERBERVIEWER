@@ -808,3 +808,36 @@ fn the_command_line_names_what_is_missing_or_wrong() {
     assert!(!out.exists(), "nothing is written after an error");
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn check_says_when_there_are_no_layers_to_compare_and_measure_refuses_extra_arguments() {
+    let dir = scratch("cli_nothing_to_compare");
+    let (top, drill) = (dir.join("top.gtl"), dir.join("holes.drl"));
+    std::fs::write(&top, COPPER).unwrap();
+    std::fs::write(
+        &drill,
+        "M48\nMETRIC\nT1C0.8\n%\nT1\nX005.000Y005.000\nM30\n",
+    )
+    .unwrap();
+    let (t, d) = (top.to_str().unwrap(), drill.to_str().unwrap());
+    // only a drill file: nothing was compared and it must not claim that the layers line up
+    let (c, o, _) = viewer(&["check", d]);
+    assert_eq!(c, Some(0));
+    assert!(
+        o.contains("no layers to compare") && o.contains("nothing was checked"),
+        "{o}"
+    );
+    assert!(!o.contains("line up"), "{o}");
+    // one layer and its holes: the holes were checked, the layers were not compared
+    let (c, o, _) = viewer(&["check", t, d]);
+    assert_eq!(c, Some(0));
+    assert!(
+        o.contains("no layers to compare") && o.contains("holes are inside"),
+        "{o}"
+    );
+    // a second argument of measure is a mistake of use
+    let (c, _, e) = viewer(&["measure", t, d]);
+    assert_eq!(c, Some(1));
+    assert!(e.contains("measure takes one layer"), "{e}");
+    let _ = std::fs::remove_dir_all(&dir);
+}

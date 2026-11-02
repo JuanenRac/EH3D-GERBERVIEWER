@@ -111,6 +111,12 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
         }
         "measure" => {
             let p = args.first().ok_or("measure needs a layer")?;
+            if args.len() > 1 {
+                return Err(format!(
+                    "measure takes one layer, not {} (usage: measure LAYER)",
+                    args.len()
+                ));
+            }
             let s = load(p)?;
             match min_track_width(&s) {
                 Some(w) => println!("narrowest track: {w:.3} mm"),
@@ -138,13 +144,23 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
                 .map(|(n, _, s)| (n.clone(), s.bounds()))
                 .collect();
             let mut findings = compare_boxes(&boxes, tol);
+            let mut holes_checked = false;
             if let Some((_, _, copper)) = scenes.iter().find(|(_, d, _)| !*d) {
                 for (name, _, holes) in scenes.iter().filter(|(_, d, _)| *d) {
+                    holes_checked = true;
                     findings.extend(holes_outside(copper, holes, name));
                 }
             }
             if findings.is_empty() {
-                println!("the layers line up");
+                match (boxes.len() >= 2, holes_checked) {
+                    (true, _) => println!("the layers line up"),
+                    (false, true) => println!(
+                        "there are no layers to compare (fewer than two Gerber layers); the holes are inside the copper"
+                    ),
+                    (false, false) => println!(
+                        "there are no layers to compare (fewer than two Gerber layers and no drill file with copper): nothing was checked"
+                    ),
+                }
                 Ok(())
             } else {
                 Err(findings

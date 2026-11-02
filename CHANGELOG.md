@@ -3,6 +3,8 @@
 All notable changes to this project are documented here.
 
 ## [Unreleased]
+- **`check` says when it had nothing to compare:** with only a drill file, or a single layer, it reports that there are no layers to compare instead of saying that the layers line up.
+- **`measure` refuses extra arguments** with a usage error instead of ignoring them.
 - **More tests:** the comparison of layers at the exact tolerance, holes that touch the copper, tracks that overlap or run parallel, the limit of shapes that are measured pair by pair, colours and opacities that are not valid, the names of layers in the picture and every command of the command line. Two layers with the same file name are now both compared.
 
 ## [0.0.3] - Shapes from the shared geometry crate
