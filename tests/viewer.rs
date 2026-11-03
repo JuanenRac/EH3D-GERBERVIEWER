@@ -886,3 +886,56 @@ fn a_layer_the_reader_found_errors_in_or_with_nothing_to_draw_fails_every_comman
     assert_eq!(c, Some(0), "{err}");
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn a_layer_over_the_size_limit_is_refused_in_the_language_of_the_system_and_the_arc_tolerance_is_checked(
+) {
+    let dir = scratch("cli_limit");
+    let top = dir.join("top.gtl");
+    std::fs::write(&top, COPPER).unwrap();
+    let t = top.to_str().unwrap();
+    for (lang, word) in [
+        ("en", "above the limit"),
+        ("es", "supera el límite"),
+        ("de", "überschreitet die Grenze"),
+        ("fr", "dépasse la limite"),
+        ("it", "supera il limite"),
+        ("ja", "上限を超えています"),
+        ("zh", "文件超过上限"),
+        ("pt", "excede o limite"),
+    ] {
+        let out = Command::new(env!("CARGO_BIN_EXE_eh3d-gerberview"))
+            .args(["info", t, "--max-bytes", "10"])
+            .env("LC_ALL", lang)
+            .output()
+            .unwrap();
+        let err = String::from_utf8_lossy(&out.stderr).into_owned();
+        assert_eq!(out.status.code(), Some(1), "{lang}: {err}");
+        assert!(err.contains(word), "{lang}: {err}");
+    }
+    let (c, _, e) = viewer(&["info", t, "--max-bytes", "1000000"]);
+    assert_eq!(c, Some(0), "{e}");
+    for bad in ["0", "5", "x"] {
+        let (c, _, e) = viewer(&["info", t, "--arc-tolerance", bad]);
+        assert_eq!(c, Some(1), "{bad}");
+        assert!(e.contains("--arc-tolerance"), "{bad}: {e}");
+    }
+    let (c, _, e) = viewer(&["info", t, "--arc-tolerance", "0.001"]);
+    assert_eq!(c, Some(0), "{e}");
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn render_never_overwrites_a_layer_when_the_arguments_are_in_the_wrong_order() {
+    let dir = scratch("cli_render_order");
+    let top = dir.join("top.gtl");
+    std::fs::write(&top, COPPER).unwrap();
+    let svg = dir.join("out.svg");
+    let (c, _, e) = viewer(&["render", top.to_str().unwrap(), svg.to_str().unwrap()]);
+    assert_eq!(c, Some(1), "{e}");
+    assert!(e.contains("looks like a layer"), "{e}");
+    assert_eq!(std::fs::read_to_string(&top).unwrap(), COPPER);
+    let (c, _, e) = viewer(&["render", svg.to_str().unwrap(), svg.to_str().unwrap()]);
+    assert_eq!(c, Some(1), "{e}");
+    let _ = std::fs::remove_dir_all(&dir);
+}

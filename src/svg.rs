@@ -26,7 +26,7 @@ pub fn default_color(file_name: &str) -> &'static str {
         "gto" | "gbo" => "#e8e8e8",
         "gtp" | "gbp" => "#9aa0a6",
         "gko" | "gm1" | "gml" => "#ffd700",
-        "drl" | "ncd" | "xln" | "exc" => "#ffffff",
+        "drl" | "ncd" | "xln" | "exc" | "drd" => "#ffffff",
         _ => "#b0b0b0",
     }
 }

@@ -3,6 +3,8 @@
 All notable changes to this project are documented here.
 
 ## [Unreleased]
+- **Safer render:** `render` refuses an output file that looks like a layer or is also an input, so a layer is never overwritten by the picture; `.drd` files are drill files and a name with no dot is not.
+- **Limited reading and arc tolerance:** a layer is refused by its size before it is read into memory (`--max-bytes`, message in the eight languages) and `--arc-tolerance` sets how closely arcs are followed.
 - **A damaged layer is not drawn in silence:** the notices of the reader are shown, and every command fails (exit code 1) with a layer that has reading errors or nothing to draw.
 - **The workflows are hardened:** every action is pinned by its commit with its version in a comment, and the checkouts keep no credentials.
 - **More tests:** the measures and the clearance at their limits, the comparison of the layers, the holes outside the copper, the colours of the layers and the picture with odd colours, opacities and names.

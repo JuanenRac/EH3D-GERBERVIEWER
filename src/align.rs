@@ -8,7 +8,7 @@ pub struct Finding {
     pub message: String,
 }
 
-/// Compares the centre and the size of every layer with the first one. `tolerance_mm` is how much a centre may differ.
+/// Compares the centre of every layer with the centre of the first one (the sizes are not compared). `tolerance_mm` is how much a centre may differ.
 pub fn compare_boxes(layers: &[(String, Bounds)], tolerance_mm: f64) -> Vec<Finding> {
     let mut out = Vec::new();
     let Some((first_at, (first_name, first))) =
