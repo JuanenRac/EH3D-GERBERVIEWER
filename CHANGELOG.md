@@ -3,6 +3,7 @@
 All notable changes to this project are documented here.
 
 ## [Unreleased]
+- **The application icon and the logos of the program:** `images/brand/` holds the icon (SVG, PNG sizes, `.ico` and `.icns`), the horizontal and vertical logos in a light and a dark version and the social preview image.
 - **Shared checks updated:** the validator also compares the badge and the Version row of the README with the manifest, fails when one of its checks cannot run, and the CHANGELOG step of the workflow reads the base branch from the environment.
 - **Safer render:** `render` refuses an output file that looks like a layer or is also an input, so a layer is never overwritten by the picture; `.drd` files are drill files and a name with no dot is not.
 - **Limited reading and arc tolerance:** a layer is refused by its size before it is read into memory (`--max-bytes`, message in the eight languages) and `--arc-tolerance` sets how closely arcs are followed.
