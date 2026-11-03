@@ -3,6 +3,12 @@
 All notable changes to this project are documented here.
 
 ## [Unreleased]
+
+- **Faster, bounded CI:** the Cargo build is cached, a run that a newer push supersedes is cancelled, every job has a time limit, and the Rust jobs live in their own workflow that is skipped when only documents or images change.
+- **A fixed Rust toolchain:** `rust-toolchain.toml` names the compiler version (with rustfmt and clippy) that the CI installs, so a new stable release cannot turn the lints red without a change here.
+- **Monthly dependency updates:** Dependabot opens one grouped pull request a month for the GitHub Actions.
+- **A line for every change:** a pull request that changes code must add a line under `[Unreleased]` of this file (`tools/changelog_pr_check.py`; the label `no-changelog` skips it).
+- **Shared checks updated:** the validator of the suite checks the text of the banner against the manifest and reads the files that git tracks.
 - **`check` says when it had nothing to compare:** with only a drill file, or a single layer, it reports that there are no layers to compare instead of saying that the layers line up.
 - **`measure` refuses extra arguments** with a usage error instead of ignoring them.
 - **More tests:** the comparison of layers at the exact tolerance, holes that touch the copper, tracks that overlap or run parallel, the limit of shapes that are measured pair by pair, colours and opacities that are not valid, the names of layers in the picture and every command of the command line. Two layers with the same file name are now both compared.
