@@ -841,3 +841,48 @@ fn check_says_when_there_are_no_layers_to_compare_and_measure_refuses_extra_argu
     assert!(e.contains("measure takes one layer"), "{e}");
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn a_layer_the_reader_found_errors_in_or_with_nothing_to_draw_fails_every_command() {
+    let dir = scratch("cli_bad_layer");
+    let (bad, empty, good) = (
+        dir.join("bad.gtl"),
+        dir.join("empty.gtl"),
+        dir.join("good.gtl"),
+    );
+    // seven digits do not fit the format 2.4: the block is lost
+    std::fs::write(
+        &bad,
+        "%FSLAX24Y24*%\n%MOMM*%\n%ADD10C,0.5*%\nD10*\nX1234567Y0D01*\nM02*\n",
+    )
+    .unwrap();
+    std::fs::write(&empty, "%FSLAX24Y24*%\n%MOMM*%\nM02*\n").unwrap();
+    std::fs::write(&good, COPPER).unwrap();
+    let (b, e, g) = (
+        bad.to_str().unwrap(),
+        empty.to_str().unwrap(),
+        good.to_str().unwrap(),
+    );
+    let svg = dir.join("o.svg");
+    for args in [
+        vec!["info", b],
+        vec!["measure", b],
+        vec!["check", b, g],
+        vec!["render", svg.to_str().unwrap(), b],
+        vec!["info", e],
+        vec!["measure", e],
+        vec!["render", svg.to_str().unwrap(), e],
+    ] {
+        let (c, _, err) = viewer(&args);
+        assert_eq!(c, Some(1), "{args:?}: {err}");
+    }
+    let (_, _, err) = viewer(&["info", b]);
+    assert!(
+        err.contains("[coordinate-invalid]") || err.contains("error"),
+        "{err}"
+    );
+    assert!(!svg.exists());
+    let (c, _, err) = viewer(&["info", g]);
+    assert_eq!(c, Some(0), "{err}");
+    let _ = std::fs::remove_dir_all(&dir);
+}

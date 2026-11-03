@@ -30,14 +30,57 @@ fn is_drill(name: &str) -> bool {
     )
 }
 
+/// Shows what the reader said about a file (warnings and errors, one line each, on the error output) and refuses a file the reader found errors in:
+/// a layer that is drawn half is not the layer of the board.
+fn report(path: &str, diagnostics: &[eh3d_parser_gerber::Diagnostic]) -> Result<(), String> {
+    let mut errors = 0;
+    for d in diagnostics {
+        let kind = match d.severity {
+            eh3d_parser_gerber::Severity::Info => continue,
+            eh3d_parser_gerber::Severity::Error => {
+                errors += 1;
+                "error"
+            }
+            _ => "warning",
+        };
+        eprintln!(
+            "{}: line {}: {kind}: {} [{}]",
+            short(path),
+            d.line,
+            d.message,
+            d.code
+        );
+    }
+    if errors > 0 {
+        return Err(format!(
+            "{}: the reader found {errors} error(s): the layer is not complete",
+            short(path)
+        ));
+    }
+    Ok(())
+}
+
 fn load(path: &str) -> Result<Scene, String> {
     let bytes = fs::read(path).map_err(|e| format!("{path}: {e}"))?;
     let text = String::from_utf8_lossy(&bytes);
-    Ok(if is_drill(path) {
-        from_excellon(&eh3d_parser_excellon::parse(&text))
+    if is_drill(path) {
+        let file = eh3d_parser_excellon::parse(&text);
+        report(path, &file.diagnostics)?;
+        Ok(from_excellon(&file))
     } else {
-        from_gerber(&eh3d_parser_gerber::parse(&text))
-    })
+        let file = eh3d_parser_gerber::parse(&text);
+        report(path, &file.diagnostics)?;
+        Ok(from_gerber(&file))
+    }
+}
+
+/// Like `load`, for the commands that need something to draw or measure.
+fn load_drawable(path: &str) -> Result<Scene, String> {
+    let s = load(path)?;
+    if s.shapes.is_empty() {
+        return Err(format!("{}: has nothing to draw", short(path)));
+    }
+    Ok(s)
 }
 
 fn flag(args: &mut Vec<String>, name: &str, default: f64) -> Result<f64, String> {
@@ -79,7 +122,7 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
                 .map(|p| {
                     Ok(Layer {
                         name: short(p),
-                        scene: load(p)?,
+                        scene: load_drawable(p)?,
                         color: default_color(p).to_string(),
                         opacity,
                     })
@@ -94,7 +137,7 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
                 return Err("info needs a layer".into());
             }
             for p in &args {
-                let s = load(p)?;
+                let s = load_drawable(p)?;
                 let b = s.bounds();
                 println!(
                     "{}: {} shapes, {:.3} x {:.3} mm",
@@ -117,7 +160,7 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
                     args.len()
                 ));
             }
-            let s = load(p)?;
+            let s = load_drawable(p)?;
             match min_track_width(&s) {
                 Some(w) => println!("narrowest track: {w:.3} mm"),
                 None => println!("no tracks"),

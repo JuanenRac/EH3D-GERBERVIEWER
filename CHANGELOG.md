@@ -3,6 +3,7 @@
 All notable changes to this project are documented here.
 
 ## [Unreleased]
+- **A damaged layer is not drawn in silence:** the notices of the reader are shown, and every command fails (exit code 1) with a layer that has reading errors or nothing to draw.
 - **The workflows are hardened:** every action is pinned by its commit with its version in a comment, and the checkouts keep no credentials.
 - **More tests:** the measures and the clearance at their limits, the comparison of the layers, the holes outside the copper, the colours of the layers and the picture with odd colours, opacities and names.
 
