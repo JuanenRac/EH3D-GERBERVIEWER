@@ -57,9 +57,21 @@ fn the_pads_are_the_flashed_shapes_in_the_order_of_the_file_and_tracks_are_not_p
     let s = scene(vec![
         disc(1.0, 1.0, 0.5),
         stroke(0.0, 0.0, 5.0, 0.0, 0.2),
-        Shape::Rect { x: 2.0, y: 3.0, w: 1.0, h: 1.0 },
-        Shape::Obround { x: 4.0, y: 5.0, w: 2.0, h: 1.0 },
-        Shape::Region { pts: vec![(0.0, 0.0), (1.0, 0.0), (1.0, 1.0)] },
+        Shape::Rect {
+            x: 2.0,
+            y: 3.0,
+            w: 1.0,
+            h: 1.0,
+        },
+        Shape::Obround {
+            x: 4.0,
+            y: 5.0,
+            w: 2.0,
+            h: 1.0,
+        },
+        Shape::Region {
+            pts: vec![(0.0, 0.0), (1.0, 0.0), (1.0, 1.0)],
+        },
     ]);
     assert_eq!(pad_centres(&s), vec![(1.0, 1.0), (2.0, 3.0), (4.0, 5.0)]);
     assert_eq!(centre_distance(&s, 0, 0), Ok(0.0));
@@ -100,7 +112,10 @@ fn the_clearance_looks_at_tracks_as_capsules_and_names_the_closest_pair() {
     assert!((gap - 0.8).abs() < 1e-9, "{gap}");
     assert_eq!((i, j), (0, 2));
     // crossing tracks are 0 apart
-    let x = scene(vec![stroke(0.0, 0.0, 4.0, 4.0, 0.1), stroke(0.0, 4.0, 4.0, 0.0, 0.1)]);
+    let x = scene(vec![
+        stroke(0.0, 0.0, 4.0, 4.0, 0.1),
+        stroke(0.0, 4.0, 4.0, 0.0, 0.1),
+    ]);
     assert_eq!(min_clearance(&x).unwrap().unwrap().0, 0.0);
 }
 
@@ -109,8 +124,18 @@ fn a_layer_with_fewer_than_two_round_things_has_no_clearance_and_rectangles_are_
     assert_eq!(min_clearance(&scene(vec![])), Ok(None));
     assert_eq!(min_clearance(&scene(vec![disc(0.0, 0.0, 1.0)])), Ok(None));
     let s = scene(vec![
-        Shape::Rect { x: 0.0, y: 0.0, w: 1.0, h: 1.0 },
-        Shape::Rect { x: 1.0, y: 0.0, w: 1.0, h: 1.0 },
+        Shape::Rect {
+            x: 0.0,
+            y: 0.0,
+            w: 1.0,
+            h: 1.0,
+        },
+        Shape::Rect {
+            x: 1.0,
+            y: 0.0,
+            w: 1.0,
+            h: 1.0,
+        },
         disc(9.0, 9.0, 1.0),
     ]);
     assert_eq!(min_clearance(&s), Ok(None));
@@ -118,11 +143,15 @@ fn a_layer_with_fewer_than_two_round_things_has_no_clearance_and_rectangles_are_
 
 #[test]
 fn too_many_shapes_to_compare_pair_by_pair_is_an_error_and_not_a_hang() {
-    let many: Vec<Shape> = (0..MAX_PAIRS_SHAPES + 1).map(|i| disc(i as f64 * 3.0, 0.0, 1.0)).collect();
+    let many: Vec<Shape> = (0..MAX_PAIRS_SHAPES + 1)
+        .map(|i| disc(i as f64 * 3.0, 0.0, 1.0))
+        .collect();
     let e = min_clearance(&scene(many)).unwrap_err();
     assert!(e.contains(&MAX_PAIRS_SHAPES.to_string()), "{e}");
     // exactly the limit still works
-    let just: Vec<Shape> = (0..MAX_PAIRS_SHAPES).map(|i| disc(i as f64 * 3.0, 0.0, 1.0)).collect();
+    let just: Vec<Shape> = (0..MAX_PAIRS_SHAPES)
+        .map(|i| disc(i as f64 * 3.0, 0.0, 1.0))
+        .collect();
     assert!(min_clearance(&scene(just)).is_ok());
 }
 
@@ -136,7 +165,11 @@ fn the_boxes_of_the_layers_are_compared_with_the_first_one_that_has_something() 
     let f = compare_boxes(&layers, 0.1);
     assert_eq!(f.len(), 1);
     assert_eq!(f[0].layer, "c.gko");
-    assert!(f[0].message.contains("+0.500") && f[0].message.contains("a.gtl"), "{}", f[0].message);
+    assert!(
+        f[0].message.contains("+0.500") && f[0].message.contains("a.gtl"),
+        "{}",
+        f[0].message
+    );
     // a bigger tolerance accepts it
     assert!(compare_boxes(&layers, 1.0).is_empty());
     // exactly the tolerance is accepted (only more than that is a finding)
@@ -172,8 +205,16 @@ fn two_layers_with_the_same_name_are_both_compared() {
 
 #[test]
 fn a_hole_that_sticks_out_of_the_copper_is_a_finding_and_a_hole_inside_is_not() {
-    let copper = scene(vec![stroke(0.0, 0.0, 10.0, 10.0, 0.2), disc(0.0, 0.0, 0.1), disc(10.0, 10.0, 0.1)]);
-    let holes = scene(vec![disc(5.0, 5.0, 0.4), disc(50.0, 5.0, 0.4), disc(0.0, 0.0, 0.4)]);
+    let copper = scene(vec![
+        stroke(0.0, 0.0, 10.0, 10.0, 0.2),
+        disc(0.0, 0.0, 0.1),
+        disc(10.0, 10.0, 0.1),
+    ]);
+    let holes = scene(vec![
+        disc(5.0, 5.0, 0.4),
+        disc(50.0, 5.0, 0.4),
+        disc(0.0, 0.0, 0.4),
+    ]);
     let f = holes_outside(&copper, &holes, "drill.drl");
     // the one at the corner is outside by its radius, the one far away is outside, the one in the middle is inside
     assert_eq!(f.len(), 2, "{f:?}");
@@ -184,7 +225,11 @@ fn a_hole_that_sticks_out_of_the_copper_is_a_finding_and_a_hole_inside_is_not() 
 
 #[test]
 fn every_hole_is_outside_empty_copper_and_things_that_are_not_discs_are_not_holes() {
-    let holes = scene(vec![disc(1.0, 1.0, 0.3), disc(2.0, 2.0, 0.3), stroke(0.0, 0.0, 1.0, 1.0, 0.1)]);
+    let holes = scene(vec![
+        disc(1.0, 1.0, 0.3),
+        disc(2.0, 2.0, 0.3),
+        stroke(0.0, 0.0, 1.0, 1.0, 0.1),
+    ]);
     assert_eq!(holes_outside(&scene(vec![]), &holes, "d").len(), 2);
     assert!(holes_outside(&scene(vec![disc(0.0, 0.0, 5.0)]), &scene(vec![]), "d").is_empty());
 }
@@ -214,7 +259,10 @@ fn layer(name: &str, color: &str, opacity: f64, shapes: Vec<Shape>) -> Layer {
 #[test]
 fn an_empty_list_of_layers_is_a_small_picture_and_not_an_error() {
     let svg = render(&[], 1.0);
-    assert!(svg.starts_with("<svg") && svg.trim_end().ends_with("</svg>"), "{svg}");
+    assert!(
+        svg.starts_with("<svg") && svg.trim_end().ends_with("</svg>"),
+        "{svg}"
+    );
     let svg = render(&[layer("a", "#ffffff", 1.0, vec![])], 1.0);
     assert!(svg.contains("viewBox"));
 }
@@ -261,10 +309,22 @@ fn every_kind_of_shape_is_drawn_once() {
             1.0,
             vec![
                 disc(0.0, 0.0, 1.0),
-                Shape::Rect { x: 3.0, y: 0.0, w: 2.0, h: 1.0 },
-                Shape::Obround { x: 6.0, y: 0.0, w: 2.0, h: 1.0 },
+                Shape::Rect {
+                    x: 3.0,
+                    y: 0.0,
+                    w: 2.0,
+                    h: 1.0,
+                },
+                Shape::Obround {
+                    x: 6.0,
+                    y: 0.0,
+                    w: 2.0,
+                    h: 1.0,
+                },
                 stroke(0.0, 3.0, 5.0, 3.0, 0.3),
-                Shape::Region { pts: vec![(0.0, 5.0), (2.0, 5.0), (1.0, 7.0)] },
+                Shape::Region {
+                    pts: vec![(0.0, 5.0), (2.0, 5.0), (1.0, 7.0)],
+                },
             ],
         )],
         0.5,
@@ -272,6 +332,10 @@ fn every_kind_of_shape_is_drawn_once() {
     assert_eq!(svg.matches("<circle").count(), 1);
     assert_eq!(svg.matches("<line").count(), 1);
     assert_eq!(svg.matches("<polygon").count(), 1);
-    assert_eq!(svg.matches("<rect").count(), 3, "the background and two pads: {svg}");
+    assert_eq!(
+        svg.matches("<rect").count(),
+        3,
+        "the background and two pads: {svg}"
+    );
     assert_eq!(svg.matches("rx=").count(), 1);
 }
