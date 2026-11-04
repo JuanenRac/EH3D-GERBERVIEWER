@@ -339,3 +339,86 @@ fn every_kind_of_shape_is_drawn_once() {
     );
     assert_eq!(svg.matches("rx=").count(), 1);
 }
+
+#[test]
+fn a_text_that_starts_with_the_excellon_header_is_a_drill_file_whatever_its_name_is() {
+    use eh3d_gerberviewer::looks_like_drill;
+    assert!(looks_like_drill("M48\nMETRIC\nT1C0.8\n%\nT1\nX1Y1\nM30\n"));
+    assert!(looks_like_drill(
+        "\u{feff}; made by a CAD program\n\n  m48  \nINCH\n"
+    ));
+    assert!(looks_like_drill("M48,Header\n"));
+    assert!(!looks_like_drill("%FSLAX24Y24*%\n%MOMM*%\nM02*\n"));
+    assert!(!looks_like_drill("G04 M48 in a comment*\n"));
+    assert!(!looks_like_drill(""));
+    assert!(!looks_like_drill("M481\n"));
+}
+
+#[test]
+fn layers_with_the_same_centre_and_other_sizes_line_up_because_only_the_centre_is_compared() {
+    let layers = vec![
+        ("copper.gtl".to_string(), boxed(0.0, 0.0, 10.0, 10.0)),
+        ("mask.gts".to_string(), boxed(-1.0, -1.0, 11.0, 11.0)),
+    ];
+    assert!(compare_boxes(&layers, 0.01).is_empty());
+}
+
+#[test]
+fn the_public_gerber_files_of_the_readers_are_drawn_inside_the_box_their_summary_expects() {
+    use eh3d_gerberviewer::scene::from_gerber;
+    let golden = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../EH3D-CORE-LIBS/tests/golden/gerber");
+    let Ok(entries) = std::fs::read_dir(&golden) else {
+        // the sibling repository is not there: nothing to compare with
+        return;
+    };
+    let mut checked = 0;
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let name = path.file_name().unwrap().to_string_lossy().into_owned();
+        if name.ends_with(".expected") {
+            continue;
+        }
+        let Ok(expected) = std::fs::read_to_string(golden.join(format!("{name}.expected"))) else {
+            continue;
+        };
+        if !expected.contains("diagnostics: 0") {
+            continue;
+        }
+        let Some(boxline) = expected.lines().find(|l| l.starts_with("box: x ")) else {
+            continue;
+        };
+        let k = if expected.contains("Inches") {
+            25.4
+        } else {
+            1.0
+        };
+        // "box: x 5.0000..25.0000  y 5.0000..28.0000"
+        let numbers: Vec<f64> = boxline
+            .replace("box: x ", "")
+            .replace("  y ", "..")
+            .split("..")
+            .filter_map(|t| t.trim().parse::<f64>().ok())
+            .collect();
+        if numbers.len() != 4 {
+            continue;
+        }
+        let bytes = std::fs::read(&path).unwrap();
+        let scene = from_gerber(&eh3d_parser_gerber::parse(&String::from_utf8_lossy(&bytes)));
+        let b = scene.bounds();
+        assert!(!b.is_empty(), "{name}: nothing was drawn");
+        let eps = 1e-6;
+        assert!(
+            b.min_x <= numbers[0] * k + eps
+                && b.max_x >= numbers[1] * k - eps
+                && b.min_y <= numbers[2] * k + eps
+                && b.max_y >= numbers[3] * k - eps,
+            "{name}: the picture does not cover the box of the summary"
+        );
+        checked += 1;
+    }
+    assert!(
+        checked == 0 || checked >= 3,
+        "only {checked} files were compared"
+    );
+}

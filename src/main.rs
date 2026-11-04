@@ -136,6 +136,11 @@ fn report(path: &str, diagnostics: &[eh3d_parser_gerber::Diagnostic]) -> Result<
 }
 
 fn load(path: &str, opts: &Reading) -> Result<Scene, String> {
+    load_kind(path, opts).map(|(scene, _)| scene)
+}
+
+/// Reads a layer and says whether it is a drill file: by its extension, or by its header `M48` when the name says nothing (`.txt`, `.nc`, no extension).
+fn load_kind(path: &str, opts: &Reading) -> Result<(Scene, bool), String> {
     use eh3d_parser_gerber::{read_file_limited, InputError, InputLimits, ReadError};
     let bytes = read_file_limited(
         Path::new(path),
@@ -150,18 +155,21 @@ fn load(path: &str, opts: &Reading) -> Result<Scene, String> {
         other => format!("{path}: {other}"),
     })?;
     let text = String::from_utf8_lossy(&bytes);
-    if is_drill(path) {
+    if is_drill(path) || eh3d_gerberviewer::looks_like_drill(&text) {
         let file = eh3d_parser_excellon::parse(&text);
         report(path, &file.diagnostics)?;
-        Ok(from_excellon(&file))
+        Ok((from_excellon(&file), true))
     } else {
         let file = eh3d_parser_gerber::parse(&text);
         report(path, &file.diagnostics)?;
-        Ok(from_gerber_with(
-            &file,
-            &SceneOptions {
-                arc_tolerance_mm: opts.arc_tolerance_mm,
-            },
+        Ok((
+            from_gerber_with(
+                &file,
+                &SceneOptions {
+                    arc_tolerance_mm: opts.arc_tolerance_mm,
+                },
+            ),
+            false,
         ))
     }
 }
@@ -296,7 +304,10 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
             }
             let scenes = args
                 .iter()
-                .map(|p| Ok((short(p), is_drill(p), load(p, &opts)?)))
+                .map(|p| {
+                    let (scene, drill) = load_kind(p, &opts)?;
+                    Ok((short(p), drill, scene))
+                })
                 .collect::<Result<Vec<_>, String>>()?;
             let boxes: Vec<_> = scenes
                 .iter()

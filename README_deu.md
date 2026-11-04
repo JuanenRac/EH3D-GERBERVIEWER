@@ -77,6 +77,7 @@ Wie die Teile dieses Repositorys zusammenpassen: wer es nutzt, was es enthält u
 * **Tests mit beschädigten Eingaben:** Die Tests füttern auch leere Dateien, Datenmüll, riesige Zahlen und abgeschnittene Dateien; keiner darf in Panik geraten.
 * **Kein Raten:** Ein unsinniger Wert ist ein Fehler, der sagt welcher und warum, nie ein Ergebnis, das nur richtig aussieht.
 * **Kein unsafe-Code:** `#![forbid(unsafe_code)]` in Bibliothek und Programm.
+* **Eine Bohrdatei wird an ihrem Kopf erkannt, und die Ebenen werden an öffentlichen Dateien geprüft:** eine Datei, die mit `M48` beginnt, wird unabhängig von der Endung als Bohrdatei gelesen (`.txt`, `.nc`, keine), `check` vergleicht nur die Mittelpunkte der Ebenen (eine größere Lötstoppmaske als das Kupfer passt also), und ein Test zeichnet die öffentlichen Gerber-Dateien der Leser innerhalb des Rahmens, den ihre Zusammenfassungen erwarten.
 
 ## 🔒 Sicherheit und Schutz
 

@@ -7,3 +7,14 @@ pub mod align;
 pub mod measure;
 pub mod scene;
 pub mod svg;
+
+/// Whether a text is an Excellon drill file whatever its name is: its first line that is not blank and not a comment is the header `M48`. A Gerber file never starts like that.
+pub fn looks_like_drill(text: &str) -> bool {
+    text.trim_start_matches('\u{feff}')
+        .lines()
+        .map(str::trim)
+        .find(|l| !l.is_empty() && !l.starts_with(';'))
+        .is_some_and(|l| {
+            l.eq_ignore_ascii_case("M48") || l.to_ascii_uppercase().starts_with("M48,")
+        })
+}

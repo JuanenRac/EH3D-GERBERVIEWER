@@ -3,6 +3,10 @@
 All notable changes to this project are documented here.
 
 ## [Unreleased]
+- **A drill file is told by its header:** a file that starts with `M48` is read as a drill file whatever its extension is, and `check` counts it as one.
+- **The layers are compared by their centres, and a test says so:** layers with the same centre and another size line up.
+- **A test draws the public Gerber files of the readers** inside the box their summaries expect.
+- **The commands of the README are run by a test.**
 
 ## [0.0.5] - Audit fixes, the new reading limits, tests and the application icon
 

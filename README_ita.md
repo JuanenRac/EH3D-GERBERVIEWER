@@ -77,6 +77,7 @@ Come si incastrano le parti di questo repository: chi lo usa, cosa contiene e da
 * **Test con input danneggiati:** i test forniscono anche file vuoti, spazzatura, numeri enormi e file tagliati, e nessuno può andare in panico.
 * **Nessuna ipotesi:** un valore privo di senso è un errore che dice quale e perché, mai un risultato che sembra solo giusto.
 * **Nessun codice unsafe:** `#![forbid(unsafe_code)]` nella libreria e nel programma.
+* **Un file di foratura si riconosce dall'intestazione, e i livelli si verificano con file pubblici:** un file che inizia con `M48` viene letto come file di foratura qualunque sia l'estensione (`.txt`, `.nc`, nessuna), `check` confronta solo i centri dei livelli (così una maschera più grande del rame si allinea) e un test disegna i file Gerber pubblici dei lettori entro il riquadro atteso dai loro riepiloghi.
 
 ## 🔒 Sicurezza e protezione
 

@@ -77,6 +77,7 @@ Como as partes deste repositório se encaixam: quem o usa, o que contém e de qu
 * **Testes com entradas danificadas:** os testes também dão ficheiros vazios, lixo, números enormes e ficheiros cortados, e nenhum pode entrar em pânico.
 * **Sem adivinhar:** um valor sem sentido é um erro que diz qual e porquê, nunca um resultado que apenas parece certo.
 * **Sem código unsafe:** `#![forbid(unsafe_code)]` na biblioteca e no programa.
+* **Um ficheiro de furação reconhece-se pelo cabeçalho, e as camadas verificam-se com ficheiros públicos:** um ficheiro que começa por `M48` é lido como de furação qualquer que seja a extensão (`.txt`, `.nc`, nenhuma), `check` compara só os centros das camadas (assim uma máscara de soldadura maior do que o cobre alinha) e um teste desenha os ficheiros Gerber públicos dos leitores dentro da caixa que os seus resumos esperam.
 
 ## 🔒 Segurança e proteção
 

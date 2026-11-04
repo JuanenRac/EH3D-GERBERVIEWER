@@ -77,6 +77,7 @@ Comment les parties de ce dépôt s'articulent : qui l'utilise, ce qu'il contien
 * **Tests avec entrées abîmées :** les tests fournissent aussi des fichiers vides, du bruit, des nombres énormes et des fichiers coupés, et aucun ne doit paniquer.
 * **Sans deviner :** une valeur absurde est une erreur qui dit laquelle et pourquoi, jamais un résultat qui n'en a que l'air.
 * **Pas de code unsafe :** `#![forbid(unsafe_code)]` dans la bibliothèque et le programme.
+* **Un fichier de perçage se reconnaît à son en-tête, et les couches sont vérifiées avec des fichiers publics :** un fichier qui commence par `M48` est lu comme un fichier de perçage quelle que soit son extension (`.txt`, `.nc`, aucune), `check` ne compare que les centres des couches (un vernis épargne plus grand que le cuivre s'aligne donc), et un test dessine les fichiers Gerber publics des lecteurs dans la boîte qu'attendent leurs résumés.
 
 ## 🔒 Sécurité et protection
 

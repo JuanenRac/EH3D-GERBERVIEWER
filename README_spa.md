@@ -77,6 +77,7 @@ Cómo encajan las partes de este repositorio: quién lo usa, qué contiene y de 
 * **Pruebas con entradas dañadas:** las pruebas también dan ficheros vacíos, basura, números enormes y ficheros cortados, y ninguna puede provocar un pánico.
 * **Sin adivinar:** un valor que no tiene sentido es un error que dice cuál y por qué, nunca un resultado que solo lo parece.
 * **Sin código unsafe:** `#![forbid(unsafe_code)]` en la biblioteca y el programa.
+* **Un fichero de taladros se reconoce por su cabecera, y las capas se comprueban con ficheros públicos:** un fichero que empieza por `M48` se lee como de taladros sea cual sea su extensión (`.txt`, `.nc`, ninguna), `check` compara solo los centros de las capas (así una máscara de soldadura mayor que el cobre encaja) y una prueba dibuja los ficheros Gerber públicos de los lectores dentro de la caja que esperan sus resúmenes.
 
 ## 🔒 Seguridad y protección
 

@@ -77,6 +77,7 @@ How the parts of this repository fit together: who uses it, what it holds and wh
 * **Tests with damaged input:** the tests also feed empty files, garbage, huge numbers and cut files, and none of them may panic.
 * **No guessing:** a value that does not make sense is an error that says which value and why, never a result that only looks right.
 * **No unsafe code:** `#![forbid(unsafe_code)]` in the library and the program.
+* **A drill file is told by its header, and the layers are checked against public files:** a file that starts with `M48` is read as a drill file whatever its extension is (`.txt`, `.nc`, none), `check` compares only the centres of the layers (so a solder mask bigger than the copper lines up), and a test draws the public Gerber files of the readers inside the box their summaries expect.
 
 ## 🔒 Security & Safety
 
