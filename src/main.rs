@@ -65,6 +65,7 @@ const HELP: &str = "eh3d-gerberview: a light viewer of Gerber layers and drill f
   eh3d-gerberview info LAYER...                                          size, shapes and what was not drawn
   eh3d-gerberview measure LAYER                                          narrowest track and smallest gap between pads and tracks
   eh3d-gerberview check LAYER... [--tolerance 0.5]                       do the layers line up? are the holes inside the copper?
+  eh3d-gerberview [gui] [LAYER...]                                       the window (a build with --features gui): with no arguments, or with a single layer, it opens; the commands above never open it
 
 Every command also takes --max-bytes N (the largest file read, 268435456 by default; a larger one is refused before it is read) and --arc-tolerance MM (how closely
 arcs are followed, 0.005 by default).
@@ -209,6 +210,10 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
         return Ok(());
     }
     let cmd = args.remove(0);
+    if cmd == "gui" {
+        // a build with the window never gets here (main opens it): this one is only a command line
+        return Err("this build has no window: build it with --features gui".into());
+    }
     let max_bytes = flag(
         &mut args,
         "--max-bytes",
@@ -345,8 +350,43 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
     }
 }
 
+/// Whether the program opens its window instead of running a command, and the layers to open in it: no arguments, `gui` (with layers or without), or a single layer file given by the
+/// system to open (a name with an extension that is a file; the commands have none).
+#[cfg(feature = "gui")]
+fn window_request(args: &[String]) -> Option<Vec<String>> {
+    match args {
+        [] => Some(Vec::new()),
+        [a, rest @ ..] if a == "gui" => Some(rest.to_vec()),
+        [f] if !f.starts_with('-')
+            && Path::new(f).extension().is_some()
+            && Path::new(f).is_file() =>
+        {
+            Some(vec![f.clone()])
+        }
+        _ => None,
+    }
+}
+
+#[cfg(feature = "gui")]
+fn open_window(layers: Vec<String>) -> ExitCode {
+    let lang = eh3d_gerberviewer::lang::Lang::from_env();
+    let layers = layers.into_iter().map(std::path::PathBuf::from).collect();
+    match eh3d_gerberviewer::gui::run(layers, lang) {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("error: the window could not be opened: {e}");
+            ExitCode::from(1)
+        }
+    }
+}
+
 fn main() -> ExitCode {
-    match run(env::args().skip(1).collect()) {
+    let args: Vec<String> = env::args().skip(1).collect();
+    #[cfg(feature = "gui")]
+    if let Some(layers) = window_request(&args) {
+        return open_window(layers);
+    }
+    match run(args) {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
             eprintln!("error: {e}");

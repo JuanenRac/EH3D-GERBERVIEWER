@@ -17,7 +17,7 @@
 
 ---
 
-**Vérification d'honnêteté - ce qui fonctionne aujourd'hui :** une bibliothèque Rust et un programme en ligne de commande (`eh3d-gerberview`) avec 58 tests exécutés sur un ordinateur : dessine des couches Gerber et des fichiers de perçage en image SVG, mesure pistes et espaces et vérifie que les couches s'alignent. Il n'a pas encore de fenêtre, n'a pas été essayé sur une machine et n'a pas été vérifié sur une collection de fichiers réels.
+**Vérification d'honnêteté - ce qui fonctionne aujourd'hui :** une bibliothèque Rust et un programme en ligne de commande (`eh3d-gerberview`) avec 106 tests exécutés sur un ordinateur : dessine des couches Gerber et des fichiers de perçage en image SVG, mesure pistes et espaces et vérifie que les couches s'alignent. Il a une fenêtre (compilée avec `--features gui`) qui montre les couches l'une sur l'autre avec zoom et déplacement, mais qui n'a pas encore été vue sur un écran ; il n'a pas été essayé sur une machine et n'a pas été vérifié sur une collection de fichiers réels.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Version | `0.0.5` |
 | Maturité | Échafaudage |
-| Tests | 58 |
+| Tests | 106 |
 | Pile technique | Rust |
 | Sur du matériel réel | Non essayé : rien ici n'a fonctionné sur une machine |
 
@@ -46,9 +46,9 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 |---|---|---|
 | Cœur | 🟡 | dessine des couches Gerber et des fichiers de perçage en image SVG, mesure pistes et espaces et vérifie que les couches s'alignent ; testé sur un ordinateur avec des entrées normales et abîmées, pas avec une collection de fichiers réels. |
 | Ligne de commande | 🟡 | `eh3d-gerberview` exécute les mêmes fonctions que la bibliothèque et affiche le résultat ; chaque erreur revient sous forme de message et de code de sortie non nul. |
-| Tests | 🟡 | 58 tests passent (`cargo test`), avec des cas normaux, des cas limites et des entrées abîmées. |
+| Tests | 🟡 | 106 tests passent (`cargo test`), avec des cas normaux, des cas limites et des entrées abîmées. |
 | Sécurité | 🟡 | Rust sûr et simple (`forbid(unsafe_code)`) : rien ne panique sur les fichiers reçus et une mauvaise valeur est une erreur avec sa raison ; pas de revue indépendante. |
-| Fenêtre | 🔴 | Prévu : la fenêtre egui commune à la suite ; aujourd'hui il n'y a que la ligne de commande. |
+| Fenêtre | 🟠 | Écrite (egui, `--features gui`) : ajouter ou déposer plusieurs couches et fichiers de perçage, afficher ou masquer chacune, zoom et déplacement, mesurer, vérifier l'alignement, exporter l'image en SVG ; sa logique est testée, mais elle n'a pas encore été compilée ni vue sur un écran. |
 | Matériel réel | 🔴 | Non essayé : rien ici n'a été exécuté sur une machine. |
 | Documentation | 🟡 | README en huit langues, le journal des modifications et les deux images dessinées depuis `docs/`. |
 
@@ -60,7 +60,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 
 ## 🧩 Rôle dans EH3D
 
-EH3D-GERBERVIEWER est un programme de l'EH3D Fabrication Suite. Aujourd'hui il fonctionne comme bibliothèque et ligne de commande ; sa fenêtre, avec l'aspect commun aux autres programmes de la suite, est prévue. Il lit et écrit des fichiers simples et peut donc s'utiliser seul ou entre les autres programmes.
+EH3D-GERBERVIEWER est un programme de l'EH3D Fabrication Suite. Il fonctionne comme bibliothèque et ligne de commande et, compilé avec `--features gui`, comme fenêtre avec l'aspect commun aux autres programmes de la suite. Il lit et écrit des fichiers simples et peut donc s'utiliser seul ou entre les autres programmes.
 
 ## 🏛️ Architecture
 
@@ -97,13 +97,20 @@ La bibliothèque est `eh3d_gerberviewer` (`use eh3d_gerberviewer::...`) ; la lig
 EH3D-GERBERVIEWER/
 ├── src/
 │   ├── align.rs                                 une partie de la logique
+│   ├── browse.rs                                la liste des fichiers de la fenêtre d'ouverture d'un fichier
+│   ├── draw.rs                                  ce que dessine la fenêtre : les formes et les triangles des régions
+│   ├── gui.rs                                   la fenêtre (egui, avec la fonctionnalité gui) : dessine l'état et transmet ce que fait la personne
+│   ├── lang.rs                                  les mots de la fenêtre dans les huit langues
 │   ├── lib.rs                                   la bibliothèque : ce que chaque commande utilise
 │   ├── main.rs                                  la ligne de commande
 │   ├── measure.rs                               une partie de la logique
 │   ├── scene.rs                                 une partie de la logique
-│   └── svg.rs                                   une partie de la logique
+│   ├── svg.rs                                   une partie de la logique
+│   ├── viewport.rs                              zoom et déplacement de l'image, en simples nombres
+│   └── window.rs                                l'état de la fenêtre sans écran : couches, paramètres, mesures, vérifications, export et état
 ├── tests/
-│   └── viewer.rs                                tests de la bibliothèque et de la ligne de commande
+│   ├── viewer.rs                                tests de la bibliothèque et de la ligne de commande
+│   └── window_cli.rs                            tests qu'une compilation sans la fonctionnalité gui reste une ligne de commande
 ├── examples/
 │   ├── sample.gtl                               un exemple pour essayer le programme
 │   └── sample.ncd                               un exemple pour essayer le programme
@@ -133,11 +140,12 @@ Il faut une chaîne d'outils Rust stable (1.75 ou plus récente).
 cargo build --release
 cargo test
 cargo run --release -- info examples/sample.gtl examples/sample.ncd
+cargo run --release --features gui   # the window
 ```
 
 ## 🧪 Tests
 
-La suite compte 58 tests (`cargo test`, exécutés sous Windows et Linux dans le CI). Ils vérifient les cas normaux, les cas limites et les entrées abîmées : fichiers vides, bruit et fichiers coupés ne font jamais paniquer. Le CI exécute aussi `cargo fmt --check`, `cargo clippy` avec les avertissements comme erreurs et `python -I tools/ci_validate.py`.
+La suite compte 106 tests (`cargo test`, exécutés sous Windows et Linux dans le CI). Ils vérifient les cas normaux, les cas limites et les entrées abîmées : fichiers vides, bruit et fichiers coupés ne font jamais paniquer. Le CI exécute aussi `cargo fmt --check`, `cargo clippy` avec les avertissements comme erreurs et `python -I tools/ci_validate.py`.
 
 ## 🏗️ Compilation et publication
 
@@ -154,11 +162,28 @@ La version se trouve dans `Cargo.toml` et `eh3d.project.json` ; chaque version a
 
 ```text
 EH3D-GERBERVIEWER/
-├── crates/
-│   ├── eh3d-parser-gerber/                      lecteur Gerber RS-274X
-│   ├── eh3d-parser-excellon/                    lecteur de fichiers de perçage Excellon
-│   └── eh3d-parser-gcode/                       lecteur et interpréteur modal de G-code
-├── docs/                                        READERS.md, ce que promet chaque lecteur et ce qu'il ne fait pas, et les données des deux images
+├── src/
+│   ├── align.rs                                 une partie de la logique
+│   ├── browse.rs                                la liste des fichiers de la fenêtre d'ouverture d'un fichier
+│   ├── draw.rs                                  ce que dessine la fenêtre : les formes et les triangles des régions
+│   ├── gui.rs                                   la fenêtre (egui, avec la fonctionnalité gui) : dessine l'état et transmet ce que fait la personne
+│   ├── lang.rs                                  les mots de la fenêtre dans les huit langues
+│   ├── lib.rs                                   la bibliothèque : ce que chaque commande utilise
+│   ├── main.rs                                  la ligne de commande
+│   ├── measure.rs                               une partie de la logique
+│   ├── scene.rs                                 une partie de la logique
+│   ├── svg.rs                                   une partie de la logique
+│   ├── viewport.rs                              zoom et déplacement de l'image, en simples nombres
+│   └── window.rs                                l'état de la fenêtre sans écran : couches, paramètres, mesures, vérifications, export et état
+├── tests/
+│   ├── viewer.rs                                tests de la bibliothèque et de la ligne de commande
+│   └── window_cli.rs                            tests qu'une compilation sans la fonctionnalité gui reste une ligne de commande
+├── examples/
+│   ├── sample.gtl                               un exemple pour essayer le programme
+│   └── sample.ncd                               un exemple pour essayer le programme
+├── docs/
+│   ├── architecture.json                        données de l'image d'Architecture
+│   └── structure.json                           données de l'image de Structure
 ├── tools/                                       contrôle de la CI et du README et outils d'images
 ├── images/                                      bannière et images d'Architecture et de Structure du dépôt
 ├── .github/                                     workflows de CI et de publication, modèles d'issues et de pull requests
@@ -176,14 +201,14 @@ EH3D-GERBERVIEWER/
 
 **Limites connues aujourd'hui**
 
-* Il n'a pas encore de fenêtre : seules la bibliothèque et la ligne de commande existent.
+* La fenêtre n'a pas encore été vue sur un écran.
 * Il n'a été essayé ni sur une machine ni avec une collection de fichiers réels, et n'a pas eu de revue indépendante.
-* Il dessine un fichier image, pas une fenêtre avec zoom et déplacement, et ne compare pas les pastilles rectangulaires ni les régions pour mesurer les espaces.
+* Il ne compare pas les pastilles rectangulaires ni les régions pour mesurer les espaces, et la fenêtre dessine les formes qui se chevauchent d'une couche l'une sur l'autre : l'opacité s'additionne là où elles se rencontrent.
 
 **Ensuite**
 
-* Ajouter la fenêtre avec zoom, déplacement, interrupteurs de couche et outils de mesure, dessinée sur le GPU.
-* Ajouter la fenêtre avec l'aspect commun des programmes de la suite, en huit langues.
+* Voir la fenêtre sur un écran et la compléter : mesurer en cliquant sur l'image, avec les pastilles et pistes qu'une mesure nomme mises en évidence.
+* Dessiner chaque couche avec son opacité d'un seul bloc, pour qu'elle ne s'additionne pas là où les formes d'une couche se chevauchent.
 * L'essayer avec des fichiers réels et avec les autres programmes de la suite.
 
 ## 🌍 Langues

@@ -2,7 +2,7 @@
   "repo": "EH3D-GERBERVIEWER",
   "ecosystem": "eh3d",
   "tagline": "Gerber layers and drill files, drawn, measured and checked.",
-  "description": "EH3D-GERBERVIEWER is a Rust library and command line that turn Gerber layers and Excellon files, read with the readers of EH3D-CORE-LIBS, into an SVG picture and measures. It has no window yet.",
+  "description": "EH3D-GERBERVIEWER is a Rust library and command line that turn Gerber layers and Excellon files, read with the readers of EH3D-CORE-LIBS, into an SVG picture and measures. Built with the gui feature it also has a window (egui) that shows several layers one over the other with zoom and panning, measures, checks the alignment and exports the picture.",
   "columns": [
     "WHO USES IT",
     "THIS REPOSITORY",
@@ -71,6 +71,24 @@
       ]
     },
     {
+      "id": "window",
+      "column": 1,
+      "level": "untested",
+      "title": "window (gui feature)",
+      "lines": [
+        "state, measures and words are",
+        "tested; the drawing is not seen"
+      ],
+      "code": [
+        "src/window.rs::pub struct Window",
+        "src/viewport.rs::pub struct Viewport",
+        "src/lang.rs::pub enum Lang",
+        "src/browse.rs::pub struct Browser",
+        "src/draw.rs::pub struct Drawing",
+        "src/gui.rs::pub fn run"
+      ]
+    },
+    {
       "id": "libs",
       "column": 2,
       "level": "external",
@@ -121,12 +139,18 @@
       "from": "scene",
       "to": "files",
       "level": "tested"
+    },
+    {
+      "from": "person",
+      "to": "window",
+      "level": "untested"
     }
   ],
   "legend": {
-    "tested": "covered by tests on a computer (31 tests)",
+    "tested": "covered by tests on a computer (106 tests)",
     "config": "planned, not used today",
-    "external": "a person, a file or another repository"
+    "external": "a person, a file or another repository",
+    "untested": "written, not built or looked at on a screen yet"
   },
-  "footer": "A picture file today, not yet a window."
+  "footer": "A picture file, and a window built with the gui feature that nobody has looked at on a screen yet."
 }

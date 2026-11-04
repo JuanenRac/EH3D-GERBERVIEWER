@@ -17,7 +17,7 @@
 
 ---
 
-**Honesty check - what actually runs today:** a Rust library and a command line program (`eh3d-gerberview`) with 58 tests that run on a computer: draws Gerber layers and drill files as an SVG picture, measures tracks and gaps and checks that the layers line up. It has no window yet, it has not been tried on a machine and it has not been checked against a collection of real files.
+**Honesty check - what actually runs today:** a Rust library and a command line program (`eh3d-gerberview`) with 106 tests that run on a computer: draws Gerber layers and drill files as an SVG picture, measures tracks and gaps and checks that the layers line up. It has a window (built with `--features gui`) that shows the layers one over the other with zoom and panning, but the window has not been looked at on a screen yet; it has not been tried on a machine and it has not been checked against a collection of real files.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Version | `0.0.5` |
 | Maturity | Scaffolding |
-| Tests | 58 |
+| Tests | 106 |
 | Stack | Rust |
 | On real hardware | Not tried: nothing here has run on a machine |
 
@@ -46,9 +46,9 @@ Each line is one part of this repository and the light says how far it is today.
 |---|---|---|
 | Core | 🟡 | draws Gerber layers and drill files as an SVG picture, measures tracks and gaps and checks that the layers line up; tested on a computer with normal and damaged input, not with a collection of real files. |
 | Command line | 🟡 | `eh3d-gerberview` runs the same functions as the library and prints the result; every error comes back as a message and a non-zero exit code. |
-| Tests | 🟡 | 58 tests pass (`cargo test`), with normal cases, edge cases and damaged input. |
+| Tests | 🟡 | 106 tests pass (`cargo test`), with normal cases, edge cases and damaged input. |
 | Security | 🟡 | Plain safe Rust (`forbid(unsafe_code)`): nothing panics on the files it is given and a bad value is an error with its reason; no independent review. |
-| Window | 🔴 | Planned: the egui window common to the suite; today there is only the command line. |
+| Window | 🟠 | Written (egui, `--features gui`): add or drop several layers and drill files, show or hide each, zoom and pan, measure, check the alignment, export the picture as SVG; its logic is tested, but it has not been built or looked at on a screen yet. |
 | Real hardware | 🔴 | Not tried: nothing here has been run on a machine. |
 | Documentation | 🟡 | README in eight languages, the changelog and the two pictures drawn from `docs/`. |
 
@@ -60,7 +60,7 @@ Each line is one part of this repository and the light says how far it is today.
 
 ## 🧩 Role in EH3D
 
-EH3D-GERBERVIEWER is one program of the EH3D Fabrication Suite. Today it works as a library and a command line; its window, in the look the other programs of the suite share, is planned. It reads and writes plain files, so it can be used on its own or between the other programs.
+EH3D-GERBERVIEWER is one program of the EH3D Fabrication Suite. It works as a library and a command line and, built with `--features gui`, as a window in the look the other programs of the suite share. It reads and writes plain files, so it can be used on its own or between the other programs.
 
 ## 🏛️ Architecture
 
@@ -97,13 +97,20 @@ The library is `eh3d_gerberviewer` (`use eh3d_gerberviewer::...`); the command l
 EH3D-GERBERVIEWER/
 ├── src/
 │   ├── align.rs                                 a part of the logic
+│   ├── browse.rs                                the list of files of the window that opens a file
+│   ├── draw.rs                                  what the window draws: the shapes and the triangles of the regions
+│   ├── gui.rs                                   the window (egui, with the gui feature): draws the state and passes on what the person does
+│   ├── lang.rs                                  the words of the window in the eight languages
 │   ├── lib.rs                                   the library: what every command uses
 │   ├── main.rs                                  the command line
 │   ├── measure.rs                               a part of the logic
 │   ├── scene.rs                                 a part of the logic
-│   └── svg.rs                                   a part of the logic
+│   ├── svg.rs                                   a part of the logic
+│   ├── viewport.rs                              zoom and pan of the picture, in plain numbers
+│   └── window.rs                                the state of the window, no screen needed
 ├── tests/
-│   └── viewer.rs                                tests of the library and the command line
+│   ├── viewer.rs                                tests of the library and the command line
+│   └── window_cli.rs                            tests that a build without the gui feature stays a command line
 ├── examples/
 │   ├── sample.gtl                               a sample to try the program with
 │   └── sample.ncd                               a sample to try the program with
@@ -133,11 +140,12 @@ You need a stable Rust toolchain (1.75 or newer).
 cargo build --release
 cargo test
 cargo run --release -- info examples/sample.gtl examples/sample.ncd
+cargo run --release --features gui   # the window
 ```
 
 ## 🧪 Testing
 
-The suite has 58 tests (`cargo test`, run on Windows and Linux in the CI). They check the normal cases, the edge cases and damaged input: empty files, garbage and cut files never panic. The CI also runs `cargo fmt --check`, `cargo clippy` with warnings as errors and `python -I tools/ci_validate.py`.
+The suite has 106 tests (`cargo test`, run on Windows and Linux in the CI). They check the normal cases, the edge cases and damaged input: empty files, garbage and cut files never panic. The CI also runs `cargo fmt --check`, `cargo clippy` with warnings as errors and `python -I tools/ci_validate.py`.
 
 ## 🏗️ Build & Release
 
@@ -154,11 +162,28 @@ The version lives in `Cargo.toml` and in `eh3d.project.json`; each version has i
 
 ```text
 EH3D-GERBERVIEWER/
-├── crates/
-│   ├── eh3d-parser-gerber/                      Gerber RS-274X reader
-│   ├── eh3d-parser-excellon/                    Excellon drill file reader
-│   └── eh3d-parser-gcode/                       G-code reader and modal interpreter
-├── docs/                                        READERS.md, what every reader promises and what it does not do, and the data of the two pictures
+├── src/
+│   ├── align.rs                                 a part of the logic
+│   ├── browse.rs                                the list of files of the window that opens a file
+│   ├── draw.rs                                  what the window draws: the shapes and the triangles of the regions
+│   ├── gui.rs                                   the window (egui, with the gui feature): draws the state and passes on what the person does
+│   ├── lang.rs                                  the words of the window in the eight languages
+│   ├── lib.rs                                   the library: what every command uses
+│   ├── main.rs                                  the command line
+│   ├── measure.rs                               a part of the logic
+│   ├── scene.rs                                 a part of the logic
+│   ├── svg.rs                                   a part of the logic
+│   ├── viewport.rs                              zoom and pan of the picture, in plain numbers
+│   └── window.rs                                the state of the window, no screen needed
+├── tests/
+│   ├── viewer.rs                                tests of the library and the command line
+│   └── window_cli.rs                            tests that a build without the gui feature stays a command line
+├── examples/
+│   ├── sample.gtl                               a sample to try the program with
+│   └── sample.ncd                               a sample to try the program with
+├── docs/
+│   ├── architecture.json                        data of the Architecture picture
+│   └── structure.json                           data of the Repository Structure picture
 ├── tools/                                       CI check, README check and the picture tools
 ├── images/                                      banner and the Architecture and Repository Structure pictures
 ├── .github/                                     CI and release workflows, issue and pull-request templates
@@ -176,14 +201,14 @@ EH3D-GERBERVIEWER/
 
 **Known limits today**
 
-* It has no window yet: only the library and the command line exist.
+* The window has not been looked at on a screen yet.
 * It has not been tried on a machine nor with a collection of real files, and it has had no independent review.
-* It draws a picture file, not a window with zoom and panning, and it does not compare rectangular pads or regions when it measures gaps.
+* It does not compare rectangular pads or regions when it measures gaps, and the window draws the overlapping shapes of one layer one over the other, so the opacity adds up where they meet.
 
 **Next**
 
-* Add the window with zoom, panning, layer switches and the measuring tools, drawn on the GPU.
-* Add the window in the look shared by the programs of the suite, in the eight languages.
+* Look at the window on a screen and finish it: measuring by clicking on the picture, with the pads and tracks that a measure names highlighted.
+* Draw each layer with its opacity as a whole, so that it does not add up where the shapes of one layer overlap.
 * Try it with real files and with the other programs of the suite.
 
 ## 🌍 Languages

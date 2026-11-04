@@ -17,7 +17,7 @@
 
 ---
 
-**Ehrlichkeitscheck - was heute wirklich läuft:** eine Rust-Bibliothek und ein Kommandozeilenprogramm (`eh3d-gerberview`) mit 58 Tests, die auf einem Computer laufen: zeichnet Gerber-Lagen und Bohrdateien als SVG-Bild, misst Leiterbahnen und Abstände und prüft, ob die Lagen zueinander passen. Es hat noch kein Fenster, wurde an keiner Maschine ausprobiert und nicht an einer Sammlung echter Dateien geprüft.
+**Ehrlichkeitscheck - was heute wirklich läuft:** eine Rust-Bibliothek und ein Kommandozeilenprogramm (`eh3d-gerberview`) mit 106 Tests, die auf einem Computer laufen: zeichnet Gerber-Lagen und Bohrdateien als SVG-Bild, misst Leiterbahnen und Abstände und prüft, ob die Lagen zueinander passen. Es hat ein Fenster (Build mit `--features gui`), das die Ebenen übereinander mit Zoom und Verschieben zeigt, das aber noch auf keinem Bildschirm angesehen wurde; es wurde an keiner Maschine ausprobiert und nicht an einer Sammlung echter Dateien geprüft.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Version | `0.0.5` |
 | Reifegrad | Gerüst |
-| Tests | 58 |
+| Tests | 106 |
 | Technologie-Stack | Rust |
 | Auf echter Hardware | Nicht erprobt: nichts davon lief an einer Maschine |
 
@@ -46,9 +46,9 @@ Jede Zeile ist ein Teil dieses Repositorys, und die Ampel sagt, wie weit er heut
 |---|---|---|
 | Kern | 🟡 | zeichnet Gerber-Lagen und Bohrdateien als SVG-Bild, misst Leiterbahnen und Abstände und prüft, ob die Lagen zueinander passen; am Computer mit normalen und beschädigten Eingaben getestet, nicht mit einer Sammlung echter Dateien. |
 | Kommandozeile | 🟡 | `eh3d-gerberview` führt dieselben Funktionen wie die Bibliothek aus und gibt das Ergebnis aus; jeder Fehler kommt als Meldung mit einem Exit-Code ungleich null zurück. |
-| Tests | 🟡 | 58 Tests bestehen (`cargo test`), mit Normalfällen, Grenzfällen und beschädigten Eingaben. |
+| Tests | 🟡 | 106 Tests bestehen (`cargo test`), mit Normalfällen, Grenzfällen und beschädigten Eingaben. |
 | Sicherheit | 🟡 | Reines sicheres Rust (`forbid(unsafe_code)`): nichts gerät bei den übergebenen Dateien in Panik und ein schlechter Wert ist ein Fehler mit Begründung; keine unabhängige Prüfung. |
-| Fenster | 🔴 | Geplant: das egui-Fenster, das die Suite gemeinsam nutzt; heute gibt es nur die Kommandozeile. |
+| Fenster | 🟠 | Geschrieben (egui, `--features gui`): mehrere Ebenen und Bohrdateien hinzufügen oder hineinziehen, jede ein- oder ausblenden, Zoom und Verschieben, messen, die Ausrichtung prüfen, das Bild als SVG exportieren; die Logik ist getestet, aber noch nicht gebaut oder auf einem Bildschirm angesehen. |
 | Echte Hardware | 🔴 | Nicht erprobt: nichts davon wurde an einer Maschine ausgeführt. |
 | Dokumentation | 🟡 | README in acht Sprachen, das Changelog und die zwei aus `docs/` gezeichneten Bilder. |
 
@@ -60,7 +60,7 @@ Jede Zeile ist ein Teil dieses Repositorys, und die Ampel sagt, wie weit er heut
 
 ## 🧩 Rolle in EH3D
 
-EH3D-GERBERVIEWER ist ein Programm der EH3D Fabrication Suite. Heute arbeitet es als Bibliothek und Kommandozeile; sein Fenster im gemeinsamen Aussehen der Suite ist geplant. Es liest und schreibt einfache Dateien und lässt sich allein oder zwischen den anderen Programmen nutzen.
+EH3D-GERBERVIEWER ist ein Programm der EH3D Fabrication Suite. Es arbeitet als Bibliothek und Kommandozeile und, mit `--features gui` gebaut, als Fenster im gemeinsamen Aussehen der Suite. Es liest und schreibt einfache Dateien und lässt sich allein oder zwischen den anderen Programmen nutzen.
 
 ## 🏛️ Architektur
 
@@ -97,13 +97,20 @@ Die Bibliothek ist `eh3d_gerberviewer` (`use eh3d_gerberviewer::...`); die Komma
 EH3D-GERBERVIEWER/
 ├── src/
 │   ├── align.rs                                 ein Teil der Logik
+│   ├── browse.rs                                die Dateiliste des Fensters zum Öffnen einer Datei
+│   ├── draw.rs                                  was das Fenster zeichnet: die Formen und die Dreiecke der Flächen
+│   ├── gui.rs                                   das Fenster (egui, mit dem Feature gui): zeichnet den Zustand und gibt weiter, was die Person tut
+│   ├── lang.rs                                  die Wörter des Fensters in den acht Sprachen
 │   ├── lib.rs                                   die Bibliothek: was jeder Befehl nutzt
 │   ├── main.rs                                  die Kommandozeile
 │   ├── measure.rs                               ein Teil der Logik
 │   ├── scene.rs                                 ein Teil der Logik
-│   └── svg.rs                                   ein Teil der Logik
+│   ├── svg.rs                                   ein Teil der Logik
+│   ├── viewport.rs                              Zoom und Verschiebung des Bildes, in einfachen Zahlen
+│   └── window.rs                                der Zustand des Fensters ohne Bildschirm: Ebenen, Parameter, Messungen, Prüfungen, Export und Status
 ├── tests/
-│   └── viewer.rs                                Tests von Bibliothek und Kommandozeile
+│   ├── viewer.rs                                Tests von Bibliothek und Kommandozeile
+│   └── window_cli.rs                            Tests, dass ein Build ohne das Feature gui eine reine Kommandozeile bleibt
 ├── examples/
 │   ├── sample.gtl                               ein Beispiel zum Ausprobieren
 │   └── sample.ncd                               ein Beispiel zum Ausprobieren
@@ -133,11 +140,12 @@ Sie brauchen eine stabile Rust-Toolchain (1.75 oder neuer).
 cargo build --release
 cargo test
 cargo run --release -- info examples/sample.gtl examples/sample.ncd
+cargo run --release --features gui   # the window
 ```
 
 ## 🧪 Tests
 
-Die Suite hat 58 Tests (`cargo test`, in der CI unter Windows und Linux). Sie prüfen Normalfälle, Grenzfälle und beschädigte Eingaben: leere Dateien, Datenmüll und abgeschnittene Dateien lösen nie eine Panik aus. Die CI führt außerdem `cargo fmt --check`, `cargo clippy` mit Warnungen als Fehlern und `python -I tools/ci_validate.py` aus.
+Die Suite hat 106 Tests (`cargo test`, in der CI unter Windows und Linux). Sie prüfen Normalfälle, Grenzfälle und beschädigte Eingaben: leere Dateien, Datenmüll und abgeschnittene Dateien lösen nie eine Panik aus. Die CI führt außerdem `cargo fmt --check`, `cargo clippy` mit Warnungen als Fehlern und `python -I tools/ci_validate.py` aus.
 
 ## 🏗️ Build und Veröffentlichung
 
@@ -154,11 +162,28 @@ Die Version steht in `Cargo.toml` und in `eh3d.project.json`; jede Version hat i
 
 ```text
 EH3D-GERBERVIEWER/
-├── crates/
-│   ├── eh3d-parser-gerber/                      Gerber-RS-274X-Leser
-│   ├── eh3d-parser-excellon/                    Leser für Excellon-Bohrdateien
-│   └── eh3d-parser-gcode/                       G-Code-Leser und modaler Interpreter
-├── docs/                                        READERS.md, was jeder Leser verspricht und was nicht, und die Daten der beiden Bilder
+├── src/
+│   ├── align.rs                                 ein Teil der Logik
+│   ├── browse.rs                                die Dateiliste des Fensters zum Öffnen einer Datei
+│   ├── draw.rs                                  was das Fenster zeichnet: die Formen und die Dreiecke der Flächen
+│   ├── gui.rs                                   das Fenster (egui, mit dem Feature gui): zeichnet den Zustand und gibt weiter, was die Person tut
+│   ├── lang.rs                                  die Wörter des Fensters in den acht Sprachen
+│   ├── lib.rs                                   die Bibliothek: was jeder Befehl nutzt
+│   ├── main.rs                                  die Kommandozeile
+│   ├── measure.rs                               ein Teil der Logik
+│   ├── scene.rs                                 ein Teil der Logik
+│   ├── svg.rs                                   ein Teil der Logik
+│   ├── viewport.rs                              Zoom und Verschiebung des Bildes, in einfachen Zahlen
+│   └── window.rs                                der Zustand des Fensters ohne Bildschirm: Ebenen, Parameter, Messungen, Prüfungen, Export und Status
+├── tests/
+│   ├── viewer.rs                                Tests von Bibliothek und Kommandozeile
+│   └── window_cli.rs                            Tests, dass ein Build ohne das Feature gui eine reine Kommandozeile bleibt
+├── examples/
+│   ├── sample.gtl                               ein Beispiel zum Ausprobieren
+│   └── sample.ncd                               ein Beispiel zum Ausprobieren
+├── docs/
+│   ├── architecture.json                        Daten des Architektur-Bildes
+│   └── structure.json                           Daten des Struktur-Bildes
 ├── tools/                                       CI-Prüfung, README-Prüfung und die Bildwerkzeuge
 ├── images/                                      Banner und die Bilder von Architektur und Repository-Struktur
 ├── .github/                                     CI- und Release-Workflows, Vorlagen für Issues und Pull Requests
@@ -176,14 +201,14 @@ EH3D-GERBERVIEWER/
 
 **Bekannte Grenzen heute**
 
-* Es hat noch kein Fenster: nur Bibliothek und Kommandozeile existieren.
+* Das Fenster wurde noch auf keinem Bildschirm angesehen.
 * Es wurde weder an einer Maschine noch mit einer Sammlung echter Dateien erprobt und hatte keine unabhängige Prüfung.
-* Es zeichnet eine Bilddatei, kein Fenster mit Zoom und Verschieben, und vergleicht beim Messen von Abständen keine rechteckigen Pads oder Flächen.
+* Es vergleicht beim Messen von Abständen keine rechteckigen Pads oder Flächen, und das Fenster zeichnet sich überlappende Formen einer Ebene übereinander, sodass sich die Deckkraft dort addiert.
 
 **Als Nächstes**
 
-* Das Fenster mit Zoom, Verschieben, Lagenschaltern und Messwerkzeugen ergänzen, auf der GPU gezeichnet.
-* Das Fenster im gemeinsamen Aussehen der Suite in den acht Sprachen ergänzen.
+* Das Fenster auf einem Bildschirm ansehen und vervollständigen: Messen durch Klicken im Bild, wobei die Pads und Leiterbahnen, die eine Messung nennt, hervorgehoben werden.
+* Jede Ebene mit ihrer Deckkraft als Ganzes zeichnen, damit sie sich dort nicht addiert, wo sich Formen einer Ebene überlappen.
 * Mit echten Dateien und den anderen Programmen der Suite ausprobieren.
 
 ## 🌍 Sprachen

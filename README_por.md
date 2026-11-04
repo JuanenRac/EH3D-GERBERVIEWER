@@ -17,7 +17,7 @@
 
 ---
 
-**Verificação de honestidade - o que funciona hoje:** uma biblioteca Rust e um programa de linha de comandos (`eh3d-gerberview`) com 58 testes que correm num computador: desenha camadas Gerber e ficheiros de furação como imagem SVG, mede pistas e folgas e verifica se as camadas se alinham. Ainda não tem janela, não foi experimentado numa máquina e não foi verificado com uma coleção de ficheiros reais.
+**Verificação de honestidade - o que funciona hoje:** uma biblioteca Rust e um programa de linha de comandos (`eh3d-gerberview`) com 106 testes que correm num computador: desenha camadas Gerber e ficheiros de furação como imagem SVG, mede pistas e folgas e verifica se as camadas se alinham. Tem uma janela (compilada com `--features gui`) que mostra as camadas umas sobre as outras com zoom e deslocamento, mas que ainda não foi vista num ecrã; não foi experimentado numa máquina e não foi verificado com uma coleção de ficheiros reais.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Versão | `0.0.5` |
 | Maturidade | Estrutura inicial |
-| Testes | 58 |
+| Testes | 106 |
 | Tecnologias | Rust |
 | Em hardware real | Não experimentado: nada disto correu numa máquina |
 
@@ -46,9 +46,9 @@ Cada linha é uma parte deste repositório e a luz diz até onde chega hoje. É 
 |---|---|---|
 | Núcleo | 🟡 | desenha camadas Gerber e ficheiros de furação como imagem SVG, mede pistas e folgas e verifica se as camadas se alinham; testado num computador com entradas normais e danificadas, não com uma coleção de ficheiros reais. |
 | Linha de comandos | 🟡 | `eh3d-gerberview` executa as mesmas funções da biblioteca e imprime o resultado; cada erro volta como mensagem e código de saída diferente de zero. |
-| Testes | 🟡 | 58 testes passam (`cargo test`), com casos normais, casos-limite e entradas danificadas. |
+| Testes | 🟡 | 106 testes passam (`cargo test`), com casos normais, casos-limite e entradas danificadas. |
 | Segurança | 🟡 | Rust seguro e simples (`forbid(unsafe_code)`): nada entra em pânico com os ficheiros recebidos e um valor mau é um erro com o seu motivo; sem revisão independente. |
-| Janela | 🔴 | Previsto: a janela egui comum à suíte; hoje existe apenas a linha de comandos. |
+| Janela | 🟠 | Escrita (egui, `--features gui`): adicionar ou largar várias camadas e ficheiros de furação, mostrar ou ocultar cada uma, zoom e deslocamento, medir, verificar o alinhamento, exportar a imagem em SVG; a sua lógica está testada, mas ainda não foi compilada nem vista num ecrã. |
 | Hardware real | 🔴 | Não experimentado: nada disto foi executado numa máquina. |
 | Documentação | 🟡 | README em oito idiomas, o registo de alterações e as duas imagens desenhadas a partir de `docs/`. |
 
@@ -60,7 +60,7 @@ Cada linha é uma parte deste repositório e a luz diz até onde chega hoje. É 
 
 ## 🧩 Papel no EH3D
 
-EH3D-GERBERVIEWER é um programa da EH3D Fabrication Suite. Hoje funciona como biblioteca e linha de comandos; a sua janela, com o aspeto que os outros programas da suíte partilham, está prevista. Lê e escreve ficheiros simples, por isso pode ser usado sozinho ou entre os outros programas.
+EH3D-GERBERVIEWER é um programa da EH3D Fabrication Suite. Funciona como biblioteca e linha de comandos e, compilado com `--features gui`, como janela com o aspeto que os outros programas da suíte partilham. Lê e escreve ficheiros simples, por isso pode ser usado sozinho ou entre os outros programas.
 
 ## 🏛️ Arquitetura
 
@@ -97,13 +97,20 @@ A biblioteca é `eh3d_gerberviewer` (`use eh3d_gerberviewer::...`); a linha de c
 EH3D-GERBERVIEWER/
 ├── src/
 │   ├── align.rs                                 uma parte da lógica
+│   ├── browse.rs                                a lista de ficheiros da janela que abre um ficheiro
+│   ├── draw.rs                                  o que a janela desenha: as formas e os triângulos das regiões
+│   ├── gui.rs                                   a janela (egui, com a funcionalidade gui): desenha o estado e transmite o que a pessoa faz
+│   ├── lang.rs                                  as palavras da janela nos oito idiomas
 │   ├── lib.rs                                   a biblioteca: o que cada comando usa
 │   ├── main.rs                                  a linha de comandos
 │   ├── measure.rs                               uma parte da lógica
 │   ├── scene.rs                                 uma parte da lógica
-│   └── svg.rs                                   uma parte da lógica
+│   ├── svg.rs                                   uma parte da lógica
+│   ├── viewport.rs                              zoom e deslocamento da imagem, em números simples
+│   └── window.rs                                o estado da janela sem ecrã: camadas, parâmetros, medidas, verificações, exportação e estado
 ├── tests/
-│   └── viewer.rs                                testes da biblioteca e da linha de comandos
+│   ├── viewer.rs                                testes da biblioteca e da linha de comandos
+│   └── window_cli.rs                            testes de que uma compilação sem a funcionalidade gui continua a ser só linha de comandos
 ├── examples/
 │   ├── sample.gtl                               um exemplo para experimentar o programa
 │   └── sample.ncd                               um exemplo para experimentar o programa
@@ -133,11 +140,12 @@ Precisa de uma cadeia de ferramentas Rust estável (1.75 ou mais recente).
 cargo build --release
 cargo test
 cargo run --release -- info examples/sample.gtl examples/sample.ncd
+cargo run --release --features gui   # the window
 ```
 
 ## 🧪 Testes
 
-O conjunto tem 58 testes (`cargo test`, executados em Windows e Linux no CI). Verificam os casos normais, os casos-limite e as entradas danificadas: ficheiros vazios, lixo e ficheiros cortados nunca provocam pânico. O CI executa ainda `cargo fmt --check`, `cargo clippy` com avisos como erros e `python -I tools/ci_validate.py`.
+O conjunto tem 106 testes (`cargo test`, executados em Windows e Linux no CI). Verificam os casos normais, os casos-limite e as entradas danificadas: ficheiros vazios, lixo e ficheiros cortados nunca provocam pânico. O CI executa ainda `cargo fmt --check`, `cargo clippy` com avisos como erros e `python -I tools/ci_validate.py`.
 
 ## 🏗️ Compilação e publicação
 
@@ -154,11 +162,28 @@ A versão está em `Cargo.toml` e em `eh3d.project.json`; cada versão tem a sua
 
 ```text
 EH3D-GERBERVIEWER/
-├── crates/
-│   ├── eh3d-parser-gerber/                      leitor Gerber RS-274X
-│   ├── eh3d-parser-excellon/                    leitor de ficheiros de furação Excellon
-│   └── eh3d-parser-gcode/                       leitor e intérprete modal de G-code
-├── docs/                                        READERS.md, o que cada leitor promete e o que não faz, e os dados das duas imagens
+├── src/
+│   ├── align.rs                                 uma parte da lógica
+│   ├── browse.rs                                a lista de ficheiros da janela que abre um ficheiro
+│   ├── draw.rs                                  o que a janela desenha: as formas e os triângulos das regiões
+│   ├── gui.rs                                   a janela (egui, com a funcionalidade gui): desenha o estado e transmite o que a pessoa faz
+│   ├── lang.rs                                  as palavras da janela nos oito idiomas
+│   ├── lib.rs                                   a biblioteca: o que cada comando usa
+│   ├── main.rs                                  a linha de comandos
+│   ├── measure.rs                               uma parte da lógica
+│   ├── scene.rs                                 uma parte da lógica
+│   ├── svg.rs                                   uma parte da lógica
+│   ├── viewport.rs                              zoom e deslocamento da imagem, em números simples
+│   └── window.rs                                o estado da janela sem ecrã: camadas, parâmetros, medidas, verificações, exportação e estado
+├── tests/
+│   ├── viewer.rs                                testes da biblioteca e da linha de comandos
+│   └── window_cli.rs                            testes de que uma compilação sem a funcionalidade gui continua a ser só linha de comandos
+├── examples/
+│   ├── sample.gtl                               um exemplo para experimentar o programa
+│   └── sample.ncd                               um exemplo para experimentar o programa
+├── docs/
+│   ├── architecture.json                        dados da imagem de Arquitetura
+│   └── structure.json                           dados da imagem de Estrutura
 ├── tools/                                       verificação da CI e do README e ferramentas de imagens
 ├── images/                                      banner e as imagens de Arquitetura e Estrutura do repositório
 ├── .github/                                     fluxos de CI e de publicação, modelos de issues e pull requests
@@ -176,14 +201,14 @@ EH3D-GERBERVIEWER/
 
 **Limites conhecidos hoje**
 
-* Ainda não tem janela: existem apenas a biblioteca e a linha de comandos.
+* A janela ainda não foi vista num ecrã.
 * Não foi experimentado numa máquina nem com uma coleção de ficheiros reais e não teve revisão independente.
-* Desenha um ficheiro de imagem, não uma janela com zoom e deslocamento, e não compara pads retangulares nem regiões ao medir folgas.
+* Não compara pads retangulares nem regiões ao medir folgas, e a janela desenha as formas sobrepostas de uma camada umas sobre as outras, pelo que a opacidade se soma onde se encontram.
 
 **A seguir**
 
-* Acrescentar a janela com zoom, deslocamento, interruptores de camada e as ferramentas de medida, desenhada no GPU.
-* Acrescentar a janela com o aspeto partilhado pelos programas da suíte, nos oito idiomas.
+* Ver a janela num ecrã e completá-la: medir clicando na imagem, com os pads e pistas que uma medida nomeia realçados.
+* Desenhar cada camada com a sua opacidade como um todo, para que não se some onde as formas de uma camada se sobrepõem.
 * Experimentá-lo com ficheiros reais e com os outros programas da suíte.
 
 ## 🌍 Idiomas

@@ -17,7 +17,7 @@
 
 ---
 
-**Verifica di onestà - cosa funziona oggi:** una libreria Rust e un programma a riga di comando (`eh3d-gerberview`) con 58 test eseguiti su un computer: disegna livelli Gerber e file di foratura come immagine SVG, misura piste e distanze e verifica che i livelli siano allineati. Non ha ancora una finestra, non è stato provato su una macchina e non è stato verificato su una raccolta di file reali.
+**Verifica di onestà - cosa funziona oggi:** una libreria Rust e un programma a riga di comando (`eh3d-gerberview`) con 106 test eseguiti su un computer: disegna livelli Gerber e file di foratura come immagine SVG, misura piste e distanze e verifica che i livelli siano allineati. Ha una finestra (compilata con `--features gui`) che mostra i livelli uno sopra l'altro con zoom e spostamento, ma che non è ancora stata vista su uno schermo; non è stato provato su una macchina e non è stato verificato su una raccolta di file reali.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Versione | `0.0.5` |
 | Maturità | Impalcatura |
-| Test | 58 |
+| Test | 106 |
 | Stack tecnologico | Rust |
 | Su hardware reale | Non provato: nulla di questo ha girato su una macchina |
 
@@ -46,9 +46,9 @@ Ogni riga è una parte di questo repository e il semaforo dice a che punto è og
 |---|---|---|
 | Nucleo | 🟡 | disegna livelli Gerber e file di foratura come immagine SVG, misura piste e distanze e verifica che i livelli siano allineati; provato su un computer con input normali e danneggiati, non con una raccolta di file reali. |
 | Riga di comando | 🟡 | `eh3d-gerberview` esegue le stesse funzioni della libreria e stampa il risultato; ogni errore torna come messaggio e codice di uscita diverso da zero. |
-| Test | 🟡 | 58 test passano (`cargo test`), con casi normali, casi limite e input danneggiati. |
+| Test | 🟡 | 106 test passano (`cargo test`), con casi normali, casi limite e input danneggiati. |
 | Sicurezza | 🟡 | Rust sicuro e semplice (`forbid(unsafe_code)`): nulla va in panico con i file ricevuti e un valore errato è un errore con il suo motivo; nessuna revisione indipendente. |
-| Finestra | 🔴 | Previsto: la finestra egui comune alla suite; oggi esiste solo la riga di comando. |
+| Finestra | 🟠 | Scritta (egui, `--features gui`): aggiungere o trascinare più livelli e file di foratura, mostrare o nascondere ciascuno, zoom e spostamento, misurare, controllare l'allineamento, esportare l'immagine in SVG; la sua logica è testata, ma non è ancora stata compilata né vista su uno schermo. |
 | Hardware reale | 🔴 | Non provato: nulla di questo è stato eseguito su una macchina. |
 | Documentazione | 🟡 | README in otto lingue, il changelog e le due immagini disegnate da `docs/`. |
 
@@ -60,7 +60,7 @@ Ogni riga è una parte di questo repository e il semaforo dice a che punto è og
 
 ## 🧩 Ruolo in EH3D
 
-EH3D-GERBERVIEWER è un programma della EH3D Fabrication Suite. Oggi funziona come libreria e riga di comando; la sua finestra, con l'aspetto comune agli altri programmi della suite, è prevista. Legge e scrive file semplici, quindi può essere usato da solo o tra gli altri programmi.
+EH3D-GERBERVIEWER è un programma della EH3D Fabrication Suite. Funziona come libreria e riga di comando e, compilato con `--features gui`, come finestra con l'aspetto comune agli altri programmi della suite. Legge e scrive file semplici, quindi può essere usato da solo o tra gli altri programmi.
 
 ## 🏛️ Architettura
 
@@ -97,13 +97,20 @@ La libreria è `eh3d_gerberviewer` (`use eh3d_gerberviewer::...`); la riga di co
 EH3D-GERBERVIEWER/
 ├── src/
 │   ├── align.rs                                 una parte della logica
+│   ├── browse.rs                                l'elenco dei file della finestra che apre un file
+│   ├── draw.rs                                  ciò che disegna la finestra: le forme e i triangoli delle regioni
+│   ├── gui.rs                                   la finestra (egui, con la funzione gui): disegna lo stato e inoltra ciò che fa la persona
+│   ├── lang.rs                                  le parole della finestra nelle otto lingue
 │   ├── lib.rs                                   la libreria: ciò che usa ogni comando
 │   ├── main.rs                                  la riga di comando
 │   ├── measure.rs                               una parte della logica
 │   ├── scene.rs                                 una parte della logica
-│   └── svg.rs                                   una parte della logica
+│   ├── svg.rs                                   una parte della logica
+│   ├── viewport.rs                              zoom e spostamento dell'immagine, in semplici numeri
+│   └── window.rs                                lo stato della finestra senza schermo: livelli, parametri, misure, controlli, esportazione e stato
 ├── tests/
-│   └── viewer.rs                                test della libreria e della riga di comando
+│   ├── viewer.rs                                test della libreria e della riga di comando
+│   └── window_cli.rs                            test che una compilazione senza la funzione gui resti una riga di comando
 ├── examples/
 │   ├── sample.gtl                               un esempio per provare il programma
 │   └── sample.ncd                               un esempio per provare il programma
@@ -133,11 +140,12 @@ Serve una toolchain Rust stabile (1.75 o più recente).
 cargo build --release
 cargo test
 cargo run --release -- info examples/sample.gtl examples/sample.ncd
+cargo run --release --features gui   # the window
 ```
 
 ## 🧪 Test
 
-La suite ha 58 test (`cargo test`, eseguiti su Windows e Linux nella CI). Verificano i casi normali, i casi limite e gli input danneggiati: file vuoti, spazzatura e file tagliati non causano mai un panico. La CI esegue anche `cargo fmt --check`, `cargo clippy` con gli avvisi come errori e `python -I tools/ci_validate.py`.
+La suite ha 106 test (`cargo test`, eseguiti su Windows e Linux nella CI). Verificano i casi normali, i casi limite e gli input danneggiati: file vuoti, spazzatura e file tagliati non causano mai un panico. La CI esegue anche `cargo fmt --check`, `cargo clippy` con gli avvisi come errori e `python -I tools/ci_validate.py`.
 
 ## 🏗️ Compilazione e rilascio
 
@@ -154,11 +162,28 @@ La versione sta in `Cargo.toml` e in `eh3d.project.json`; ogni versione ha la su
 
 ```text
 EH3D-GERBERVIEWER/
-├── crates/
-│   ├── eh3d-parser-gerber/                      lettore Gerber RS-274X
-│   ├── eh3d-parser-excellon/                    lettore di file di foratura Excellon
-│   └── eh3d-parser-gcode/                       lettore e interprete modale di G-code
-├── docs/                                        READERS.md, cosa promette ogni lettore e cosa non fa, e i dati delle due immagini
+├── src/
+│   ├── align.rs                                 una parte della logica
+│   ├── browse.rs                                l'elenco dei file della finestra che apre un file
+│   ├── draw.rs                                  ciò che disegna la finestra: le forme e i triangoli delle regioni
+│   ├── gui.rs                                   la finestra (egui, con la funzione gui): disegna lo stato e inoltra ciò che fa la persona
+│   ├── lang.rs                                  le parole della finestra nelle otto lingue
+│   ├── lib.rs                                   la libreria: ciò che usa ogni comando
+│   ├── main.rs                                  la riga di comando
+│   ├── measure.rs                               una parte della logica
+│   ├── scene.rs                                 una parte della logica
+│   ├── svg.rs                                   una parte della logica
+│   ├── viewport.rs                              zoom e spostamento dell'immagine, in semplici numeri
+│   └── window.rs                                lo stato della finestra senza schermo: livelli, parametri, misure, controlli, esportazione e stato
+├── tests/
+│   ├── viewer.rs                                test della libreria e della riga di comando
+│   └── window_cli.rs                            test che una compilazione senza la funzione gui resti una riga di comando
+├── examples/
+│   ├── sample.gtl                               un esempio per provare il programma
+│   └── sample.ncd                               un esempio per provare il programma
+├── docs/
+│   ├── architecture.json                        dati dell'immagine di Architettura
+│   └── structure.json                           dati dell'immagine di Struttura
 ├── tools/                                       controllo della CI e del README e strumenti per le immagini
 ├── images/                                      banner e le immagini di Architettura e Struttura del repository
 ├── .github/                                     workflow di CI e di rilascio, modelli di issue e pull request
@@ -176,14 +201,14 @@ EH3D-GERBERVIEWER/
 
 **Limiti noti oggi**
 
-* Non ha ancora una finestra: esistono solo la libreria e la riga di comando.
+* La finestra non è ancora stata vista su uno schermo.
 * Non è stato provato su una macchina né con una raccolta di file reali e non ha avuto revisione indipendente.
-* Disegna un file immagine, non una finestra con zoom e scorrimento, e non confronta pad rettangolari o regioni nella misura degli spazi.
+* Non confronta pad rettangolari o regioni nella misura degli spazi, e la finestra disegna le forme sovrapposte di un livello una sopra l'altra, quindi l'opacità si somma dove si incontrano.
 
 **Prossimi passi**
 
-* Aggiungere la finestra con zoom, scorrimento, interruttori di livello e strumenti di misura, disegnata sulla GPU.
-* Aggiungere la finestra con l'aspetto comune ai programmi della suite, negli otto idiomi.
+* Vedere la finestra su uno schermo e completarla: misurare facendo clic sull'immagine, con i pad e le piste che una misura nomina evidenziati.
+* Disegnare ogni livello con la sua opacità come un tutto, così che non si sommi dove le forme di un livello si sovrappongono.
 * Provarlo con file reali e con gli altri programmi della suite.
 
 ## 🌍 Lingue

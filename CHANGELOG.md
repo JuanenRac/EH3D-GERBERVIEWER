@@ -3,6 +3,9 @@
 All notable changes to this project are documented here.
 
 ## [Unreleased]
+- **A window:** built with `--features gui`, `eh3d-gerberview` with no arguments (or with a single layer file, or `gui [LAYER...]`) opens a window in the look of the other programs of the suite (amber on charcoal, the icon of the program). Layers and drill files are added from the list of files of the window or dropped on it; each one can be shown or hidden and taken out; they are drawn one over the other with the opacity of the parameters, with zoom (wheel) and pan (drag); the narrowest track, the smallest gap and the pads of the chosen layer can be measured; the alignment of the layers and the holes inside the copper can be checked; and the layers that are shown are exported as one SVG picture with the margin of the parameters. The command line works as before, and a build without the feature is only a command line.
+- **The window speaks the eight languages:** English, Spanish, German, French, Italian, Japanese, Chinese and Portuguese of Portugal, chosen from the system and changeable in the window.
+- **The logic of the window needs no screen:** `window` (layers, parameters, measures, checks, export, status), `viewport` (zoom and pan), `draw` (the shapes and the triangles of the regions), `browse` (the list of files) and `lang` (the words) are plain code with their own tests; `gui` only draws them.
 - **A drill file is told by its header:** a file that starts with `M48` is read as a drill file whatever its extension is, and `check` counts it as one.
 - **The layers are compared by their centres, and a test says so:** layers with the same centre and another size line up.
 - **A test draws the public Gerber files of the readers** inside the box their summaries expect.

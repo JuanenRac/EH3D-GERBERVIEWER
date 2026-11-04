@@ -4,9 +4,16 @@
 //! Turns Gerber layers and Excellon drill files into shapes in millimetres, draws them as an SVG picture, measures them and checks that the layers line up.
 
 pub mod align;
+pub mod browse;
+pub mod draw;
+#[cfg(feature = "gui")]
+pub mod gui;
+pub mod lang;
 pub mod measure;
 pub mod scene;
 pub mod svg;
+pub mod viewport;
+pub mod window;
 
 /// Whether a text is an Excellon drill file whatever its name is: its first line that is not blank and not a comment is the header `M48`. A Gerber file never starts like that.
 pub fn looks_like_drill(text: &str) -> bool {
