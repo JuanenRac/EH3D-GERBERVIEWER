@@ -711,7 +711,7 @@ mod tests {
         assert!(w.add_layer(&file_in(&dir, "bottom.gbl", COPPER)));
         assert!(w.add_layer(&file_in(&dir, "holes.drl", DRILL)));
         assert!(w.check());
-        assert_eq!(w.report, vec![Report::Lined, Report::HolesInside]);
+        assert_eq!(w.report, [Report::Lined, Report::HolesInside]);
         assert!(!w.report[0].is_problem());
         let _ = fs::remove_dir_all(&dir);
     }
@@ -739,7 +739,7 @@ mod tests {
         assert!(!w.check());
         assert!(w.add_layer(&file_in(&dir, "top.gtl", COPPER)));
         assert!(w.check());
-        assert_eq!(w.report, vec![Report::NothingChecked]);
+        assert_eq!(w.report, [Report::NothingChecked]);
         let _ = fs::remove_dir_all(&dir);
     }
 
