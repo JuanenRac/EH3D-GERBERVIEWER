@@ -15,6 +15,7 @@ All notable changes to this project are documented here.
 - **The layers are compared by their centres, and a test says so:** layers with the same centre and another size line up.
 - **A test draws the public Gerber files of the readers** inside the box their summaries expect.
 - **The commands of the README are run by a test.**
+- **A picture mode for the window:** `--shot FILE.png` (built with `--features gui`) opens the window at the size of `--size WxH` (320 to 8192, 1180x760 by default), with `--theme forge|dark|light`, `--lang CODE` and the files of `--open FILE`, waits `--wait N` frames (0 to 3600, 6 by default), saves what it drew as a PNG file and closes by itself. An existing file is never replaced unless `--replace` is given, the window keeps no settings in this mode, the exit code is 0 when the file was written, 1 when it was not (also when the picture does not come back within 600 frames) and 2 for wrong arguments, and a build without the window says so. The arguments are read by plain code with its tests.
 
 ## [0.0.5] - Audit fixes, the new reading limits, tests and the application icon
 

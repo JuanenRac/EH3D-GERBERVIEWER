@@ -17,7 +17,7 @@
 
 ---
 
-**诚实检查 - 当前真正能运行的内容：** 一个 Rust 库和一个命令行程序（`eh3d-gerberview`），有 106 个在电脑上运行的测试：把 Gerber 层和钻孔文件绘制成 SVG 图，测量走线和间距，并检查各层是否对齐。它有一个窗口（用 `--features gui` 构建），可把各层叠加显示并缩放和平移，但窗口尚未在屏幕上看过，没有在机器上试过，也没有用大量真实文件验证过。
+**诚实检查 - 当前真正能运行的内容：** 一个 Rust 库和一个命令行程序（`eh3d-gerberview`），有 116 个在电脑上运行的测试：把 Gerber 层和钻孔文件绘制成 SVG 图，测量走线和间距，并检查各层是否对齐。它有一个窗口（用 `--features gui` 构建），可把各层叠加显示并缩放和平移，但窗口尚未在屏幕上看过，没有在机器上试过，也没有用大量真实文件验证过。
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | 版本 | `0.0.6` |
 | 成熟度 | 脚手架 |
-| 测试 | 106 |
+| 测试 | 116 |
 | 技术栈 | Rust |
 | 真实硬件 | 未试过：这里的任何内容都没有在机器上运行过 |
 
@@ -46,7 +46,7 @@
 |---|---|---|
 | 核心 | 🟡 | 把 Gerber 层和钻孔文件绘制成 SVG 图，测量走线和间距，并检查各层是否对齐；已在电脑上用正常和损坏的输入测试，未用大量真实文件验证。 |
 | 命令行 | 🟡 | `eh3d-gerberview` 运行与库相同的函数并打印结果；每个错误都以消息和非零退出码返回。 |
-| 测试 | 🟡 | 106 个测试通过（`cargo test`），包含正常情况、边界情况和损坏的输入。 |
+| 测试 | 🟡 | 116 个测试通过（`cargo test`），包含正常情况、边界情况和损坏的输入。 |
 | 安全 | 🟡 | 纯安全 Rust（`forbid(unsafe_code)`）：处理收到的文件时不会 panic，错误的值会返回带原因的错误；没有独立审查。 |
 | 窗口 | 🟠 | 已编写（egui，`--features gui`）：添加或拖入多个层和钻孔文件、显示或隐藏每一层、缩放和平移、测量、检查对齐、将图片导出为 SVG；其逻辑已测试，但尚未构建，也尚未在屏幕上看过。 |
 | 真实硬件 | 🔴 | 未试过：这里的任何内容都没有在机器上运行过。 |
@@ -105,6 +105,7 @@ EH3D-GERBERVIEWER/
 │   ├── main.rs                                  命令行
 │   ├── measure.rs                               逻辑的一部分
 │   ├── scene.rs                                 逻辑的一部分
+│   ├── shot.rs                                  窗口的截图模式（--shot）：无需屏幕即可读取和检查其参数
 │   ├── svg.rs                                   逻辑的一部分
 │   ├── viewport.rs                              图像的缩放和平移（纯数值）
 │   └── window.rs                                无需屏幕的窗口状态：层、参数、测量、检查、导出和状态
@@ -141,11 +142,14 @@ cargo build --release
 cargo test
 cargo run --release -- info examples/sample.gtl examples/sample.ncd
 cargo run --release --features gui   # the window
+cargo run --release --features gui -- --shot screen.png examples/sample.gtl   # a picture of the window
 ```
+
+要在不手动打开窗口的情况下截取窗口图像，请使用 `--shot FILE.png` 运行（还可用 `--size WxH`, `--theme forge|dark|light`, `--wait N`, `--lang CODE`, `--open FILE`, `--replace`）：它按该尺寸打开，保存 PNG，不保留任何设置并自动关闭（写入文件成功时退出码为 0，否则为 1，参数错误时为 2）。
 
 ## 🧪 测试
 
-测试套件有 106 个测试（`cargo test`，CI 在 Windows 和 Linux 上运行）。它们检查正常情况、边界情况和损坏的输入：空文件、乱码和被截断的文件绝不会 panic。CI 还运行 `cargo fmt --check`、把警告当作错误的 `cargo clippy` 以及 `python -I tools/ci_validate.py`。
+测试套件有 116 个测试（`cargo test`，CI 在 Windows 和 Linux 上运行）。它们检查正常情况、边界情况和损坏的输入：空文件、乱码和被截断的文件绝不会 panic。CI 还运行 `cargo fmt --check`、把警告当作错误的 `cargo clippy` 以及 `python -I tools/ci_validate.py`。
 
 ## 🏗️ 构建与发布
 
@@ -176,6 +180,7 @@ EH3D-GERBERVIEWER/
 │   ├── main.rs                                  命令行
 │   ├── measure.rs                               逻辑的一部分
 │   ├── scene.rs                                 逻辑的一部分
+│   ├── shot.rs                                  窗口的截图模式（--shot）：无需屏幕即可读取和检查其参数
 │   ├── svg.rs                                   逻辑的一部分
 │   ├── viewport.rs                              图像的缩放和平移（纯数值）
 │   └── window.rs                                无需屏幕的窗口状态：层、参数、测量、检查、导出和状态

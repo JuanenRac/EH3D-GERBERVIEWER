@@ -66,6 +66,7 @@ const HELP: &str = "eh3d-gerberview: a light viewer of Gerber layers and drill f
   eh3d-gerberview measure LAYER                                          narrowest track and smallest gap between pads and tracks
   eh3d-gerberview check LAYER... [--tolerance 0.5]                       do the layers line up? are the holes inside the copper?
   eh3d-gerberview [gui] [LAYER...]                                       the window (a build with --features gui): with no arguments, or with a single layer, it opens; the commands above never open it
+  eh3d-gerberview gui [FILE...] --shot OUT.png [--size WxH] [--theme forge|dark|light] [--wait N] [--lang CODE] [--replace]   a picture of the window (a build with --features gui)
 
 Every command also takes --max-bytes N (the largest file read, 268435456 by default; a larger one is refused before it is read) and --arc-tolerance MM (how closely
 arcs are followed, 0.005 by default).
@@ -380,8 +381,44 @@ fn open_window(layers: Vec<String>) -> ExitCode {
     }
 }
 
+/// The picture mode: `--shot FILE.png` opens the window, saves what it draws as a PNG file and closes. The exit code is 0 when the file was written, 1 when it was not and 2 when the
+/// arguments are wrong.
+#[cfg(feature = "gui")]
+fn take_picture(args: &[String]) -> ExitCode {
+    let parsed = match eh3d_gerberviewer::shot::parse_window_args(args, 64) {
+        Ok(parsed) => parsed,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    let Some(request) = parsed.shot else {
+        eprintln!("error: --shot needs a file to write");
+        return ExitCode::from(2);
+    };
+    let lang = parsed
+        .lang
+        .unwrap_or_else(eh3d_gerberviewer::lang::Lang::from_env);
+    match eh3d_gerberviewer::gui::run_shot(parsed.files, lang, request) {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("error: the picture could not be taken: {e}");
+            ExitCode::from(1)
+        }
+    }
+}
+
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().skip(1).collect();
+    if eh3d_gerberviewer::shot::wants_picture(&args) {
+        #[cfg(feature = "gui")]
+        return take_picture(&args);
+        #[cfg(not(feature = "gui"))]
+        {
+            eprintln!("error: this build has no window: build it with --features gui");
+            return ExitCode::from(1);
+        }
+    }
     #[cfg(feature = "gui")]
     if let Some(layers) = window_request(&args) {
         return open_window(layers);

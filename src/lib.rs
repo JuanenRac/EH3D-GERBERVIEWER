@@ -11,6 +11,7 @@ pub mod gui;
 pub mod lang;
 pub mod measure;
 pub mod scene;
+pub mod shot;
 pub mod svg;
 pub mod viewport;
 pub mod window;
