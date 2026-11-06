@@ -17,7 +17,7 @@
 
 ---
 
-**Honesty check - what actually runs today:** a Rust library and a command line program (`eh3d-gerberview`) with 116 tests that run on a computer: draws Gerber layers and drill files as an SVG picture, measures tracks and gaps and checks that the layers line up. It has a window (built with `--features gui`) that shows the layers one over the other with zoom and panning, but the window has not been looked at on a screen yet; it has not been tried on a machine and it has not been checked against a collection of real files.
+**Honesty check - what actually runs today:** a Rust library and a command line program (`eh3d-gerberview`) with 119 tests that run on a computer: draws Gerber layers and drill files as an SVG picture, measures tracks and gaps and checks that the layers line up. It has a window (built with `--features gui`) that shows the layers one over the other with zoom and panning, but the window has not been looked at on a screen yet; it has not been tried on a machine and it has not been checked against a collection of real files.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Version | `0.0.6` |
 | Maturity | Scaffolding |
-| Tests | 116 |
+| Tests | 119 |
 | Stack | Rust |
 | On real hardware | Not tried: nothing here has run on a machine |
 
@@ -46,7 +46,7 @@ Each line is one part of this repository and the light says how far it is today.
 |---|---|---|
 | Core | 🟡 | draws Gerber layers and drill files as an SVG picture, measures tracks and gaps and checks that the layers line up; tested on a computer with normal and damaged input, not with a collection of real files. |
 | Command line | 🟡 | `eh3d-gerberview` runs the same functions as the library and prints the result; every error comes back as a message and a non-zero exit code. |
-| Tests | 🟡 | 116 tests pass (`cargo test`), with normal cases, edge cases and damaged input. |
+| Tests | 🟡 | 119 tests pass (`cargo test`), with normal cases, edge cases and damaged input. |
 | Security | 🟡 | Plain safe Rust (`forbid(unsafe_code)`): nothing panics on the files it is given and a bad value is an error with its reason; no independent review. |
 | Window | 🟠 | Written (egui, `--features gui`): add or drop several layers and drill files, show or hide each, zoom and pan, measure, check the alignment, export the picture as SVG; its logic is tested, but it has not been built or looked at on a screen yet. |
 | Real hardware | 🔴 | Not tried: nothing here has been run on a machine. |
@@ -110,6 +110,7 @@ EH3D-GERBERVIEWER/
 │   ├── viewport.rs                              zoom and pan of the picture, in plain numbers
 │   └── window.rs                                the state of the window, no screen needed
 ├── tests/
+│   ├── golden.rs                                tests of the output of the commands on the example files, worked out by hand
 │   ├── viewer.rs                                tests of the library and the command line
 │   └── window_cli.rs                            tests that a build without the gui feature stays a command line
 ├── examples/
@@ -149,7 +150,7 @@ To take a picture of the window without opening it by hand, run it with `--shot 
 
 ## 🧪 Testing
 
-The suite has 116 tests (`cargo test`, run on Windows and Linux in the CI). They check the normal cases, the edge cases and damaged input: empty files, garbage and cut files never panic. The CI also runs `cargo fmt --check`, `cargo clippy` with warnings as errors and `python -I tools/ci_validate.py`.
+The suite has 119 tests (`cargo test`, run on Windows and Linux in the CI). They check the normal cases, the edge cases and damaged input: empty files, garbage and cut files never panic. The CI also runs `cargo fmt --check`, `cargo clippy` with warnings as errors and `python -I tools/ci_validate.py`.
 
 ## 🏗️ Build & Release
 
@@ -185,6 +186,7 @@ EH3D-GERBERVIEWER/
 │   ├── viewport.rs                              zoom and pan of the picture, in plain numbers
 │   └── window.rs                                the state of the window, no screen needed
 ├── tests/
+│   ├── golden.rs                                tests of the output of the commands on the example files, worked out by hand
 │   ├── viewer.rs                                tests of the library and the command line
 │   └── window_cli.rs                            tests that a build without the gui feature stays a command line
 ├── examples/

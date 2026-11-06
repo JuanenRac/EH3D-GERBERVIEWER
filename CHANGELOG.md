@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Golden outputs on the example files:** three tests run `info`, `measure` and `check` on `examples/sample.gtl` and `examples/sample.ncd` and compare the output with the numbers worked out by hand from those files (the shapes and the box of each file, the narrowest track, the pads, and the holes inside the copper).
+
 ## [0.0.6] - The window with several layers, drills and measurements, and the Windows icon
 
 - **Binaries for every system:** `release-binaries.yml` builds the program with its window for Windows (64 and 32 bits), Linux and macOS (Apple silicon and Intel), packs each one with the licence, the readme, the icon and the examples, writes `SHA256SUMS` and a build manifest, attests their provenance, verifies the artifact as a stranger would, prepares a draft release only after the owner approves it (a dry run is the default) and opens an issue `build-failed` when anything does not finish.

@@ -204,6 +204,19 @@
       "accent": "d",
       "rows": [
         {
+          "name": "golden.rs",
+          "desc": {
+            "en": "tests of the output of the commands on the example files, worked out by hand",
+            "es": "tests de la salida de las órdenes con los ficheros de ejemplo, calculada a mano",
+            "de": "Tests der Ausgabe der Befehle für die Beispieldateien, von Hand berechnet",
+            "fr": "tests de la sortie des commandes sur les fichiers d'exemple, calculée à la main",
+            "it": "test dell'output dei comandi sui file di esempio, calcolato a mano",
+            "ja": "サンプルファイルに対するコマンド出力を手計算で求めたテスト",
+            "zh": "示例文件上各命令输出的测试，结果为手工算出",
+            "pt": "testes da saída dos comandos com os ficheiros de exemplo, calculada à mão"
+          }
+        },
+        {
           "name": "viewer.rs",
           "desc": {
             "en": "tests of the library and the command line",
