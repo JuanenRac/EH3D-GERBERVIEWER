@@ -802,7 +802,9 @@ fn the_command_line_names_what_is_missing_or_wrong() {
         (vec!["frobnicate"], "unknown command"),
     ] {
         let (c, _, e) = viewer(&args);
-        assert_eq!(c, Some(1), "{args:?}");
+        // a wrong use of the command line ends with 64; a file that cannot be read with 1
+        let expected = if word == "none.gtl" { 1 } else { 64 };
+        assert_eq!(c, Some(expected), "{args:?}");
         assert!(e.starts_with("error:") && e.contains(word), "{args:?}: {e}");
     }
     assert!(!out.exists(), "nothing is written after an error");
@@ -837,7 +839,7 @@ fn check_says_when_there_are_no_layers_to_compare_and_measure_refuses_extra_argu
     );
     // a second argument of measure is a mistake of use
     let (c, _, e) = viewer(&["measure", t, d]);
-    assert_eq!(c, Some(1));
+    assert_eq!(c, Some(64));
     assert!(e.contains("measure takes one layer"), "{e}");
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -917,7 +919,7 @@ fn a_layer_over_the_size_limit_is_refused_in_the_language_of_the_system_and_the_
     assert_eq!(c, Some(0), "{e}");
     for bad in ["0", "5", "x"] {
         let (c, _, e) = viewer(&["info", t, "--arc-tolerance", bad]);
-        assert_eq!(c, Some(1), "{bad}");
+        assert_eq!(c, Some(64), "{bad}");
         assert!(e.contains("--arc-tolerance"), "{bad}: {e}");
     }
     let (c, _, e) = viewer(&["info", t, "--arc-tolerance", "0.001"]);

@@ -234,6 +234,11 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
         max_bytes: max_bytes as usize,
         arc_tolerance_mm,
     };
+    if let Some(o) = args.iter().find(|a| {
+        a.starts_with("--") && !["--opacity", "--margin", "--tolerance"].contains(&a.as_str())
+    }) {
+        return Err(format!("{o}: unknown option (see help)"));
+    }
     match cmd.as_str() {
         "render" => {
             let opacity = flag(&mut args, "--opacity", 0.85)?;
@@ -427,7 +432,26 @@ fn main() -> ExitCode {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
             eprintln!("error: {e}");
-            ExitCode::from(1)
+            ExitCode::from(exit_code(&e))
         }
+    }
+}
+
+/// The exit code of the convention of the suite for a run that ended badly: 64 when the command line was used wrongly (an unknown command, option or setting, or something it needs that is missing), 1 for a failure of the work itself.
+fn exit_code(message: &str) -> u8 {
+    const USAGE: [&str; 8] = [
+        "unknown command",
+        "unknown option",
+        "unknown setting",
+        " needs ",
+        "(usage:",
+        "(see help)",
+        "is not a number",
+        " must be from ",
+    ];
+    if USAGE.iter().any(|m| message.contains(m)) {
+        64
+    } else {
+        1
     }
 }

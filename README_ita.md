@@ -17,7 +17,7 @@
 
 ---
 
-**Verifica di onestà - cosa funziona oggi:** una libreria Rust e un programma a riga di comando (`eh3d-gerberview`) con 119 test eseguiti su un computer: disegna livelli Gerber e file di foratura come immagine SVG, misura piste e distanze e verifica che i livelli siano allineati. Ha una finestra (compilata con `--features gui`) che mostra i livelli uno sopra l'altro con zoom e spostamento, ma che non è ancora stata vista su uno schermo; non è stato provato su una macchina e non è stato verificato su una raccolta di file reali.
+**Verifica di onestà - cosa funziona oggi:** una libreria Rust e un programma a riga di comando (`eh3d-gerberview`) con 123 test eseguiti su un computer: disegna livelli Gerber e file di foratura come immagine SVG, misura piste e distanze e verifica che i livelli siano allineati. Ha una finestra (compilata con `--features gui`) che mostra i livelli uno sopra l'altro con zoom e spostamento, ma che non è ancora stata vista su uno schermo; non è stato provato su una macchina e non è stato verificato su una raccolta di file reali.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Versione | `0.0.6` |
 | Maturità | Impalcatura |
-| Test | 119 |
+| Test | 123 |
 | Stack tecnologico | Rust |
 | Su hardware reale | Non provato: nulla di questo ha girato su una macchina |
 
@@ -46,7 +46,7 @@ Ogni riga è una parte di questo repository e il semaforo dice a che punto è og
 |---|---|---|
 | Nucleo | 🟡 | disegna livelli Gerber e file di foratura come immagine SVG, misura piste e distanze e verifica che i livelli siano allineati; provato su un computer con input normali e danneggiati, non con una raccolta di file reali. |
 | Riga di comando | 🟡 | `eh3d-gerberview` esegue le stesse funzioni della libreria e stampa il risultato; ogni errore torna come messaggio e codice di uscita diverso da zero. |
-| Test | 🟡 | 119 test passano (`cargo test`), con casi normali, casi limite e input danneggiati. |
+| Test | 🟡 | 123 test passano (`cargo test`), con casi normali, casi limite e input danneggiati. |
 | Sicurezza | 🟡 | Rust sicuro e semplice (`forbid(unsafe_code)`): nulla va in panico con i file ricevuti e un valore errato è un errore con il suo motivo; nessuna revisione indipendente. |
 | Finestra | 🟠 | Scritta (egui, `--features gui`): aggiungere o trascinare più livelli e file di foratura, mostrare o nascondere ciascuno, zoom e spostamento, misurare, controllare l'allineamento, esportare l'immagine in SVG; la sua logica è testata, ma non è ancora stata compilata né vista su uno schermo. |
 | Hardware reale | 🔴 | Non provato: nulla di questo è stato eseguito su una macchina. |
@@ -92,6 +92,8 @@ Come si incastrano le parti di questo repository: chi lo usa, cosa contiene e da
 ## 🔌 Interfacce
 
 La libreria è `eh3d_gerberviewer` (`use eh3d_gerberviewer::...`); la riga di comando è `eh3d-gerberview`. I comandi sono questi; ciascuno stampa il risultato sull'output standard e segnala un errore sull'output di errore con un codice di uscita diverso da zero. Non c'è accesso alla rete.
+
+Il codice di uscita segue la convenzione della suite: 0 se l'esecuzione è andata bene, 1 se il lavoro è fallito (per esempio un file che non si può leggere) e 64 se la riga di comando è stata usata male (un comando o un'opzione sconosciuti, o qualcosa che un comando richiede e manca).
 
 ```text
 EH3D-GERBERVIEWER/
@@ -150,7 +152,7 @@ Per fare un'immagine della finestra senza aprirla a mano, eseguila con `--shot F
 
 ## 🧪 Test
 
-La suite ha 119 test (`cargo test`, eseguiti su Windows e Linux nella CI). Verificano i casi normali, i casi limite e gli input danneggiati: file vuoti, spazzatura e file tagliati non causano mai un panico. La CI esegue anche `cargo fmt --check`, `cargo clippy` con gli avvisi come errori e `python -I tools/ci_validate.py`.
+La suite ha 123 test (`cargo test`, eseguiti su Windows e Linux nella CI). Verificano i casi normali, i casi limite e gli input danneggiati: file vuoti, spazzatura e file tagliati non causano mai un panico. La CI esegue anche `cargo fmt --check`, `cargo clippy` con gli avvisi come errori e `python -I tools/ci_validate.py`.
 
 ## 🏗️ Compilazione e rilascio
 

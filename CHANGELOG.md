@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- The exit code follows the convention of the suite on the command line: 64 for a wrong use (an unknown command, option or setting, or something that is missing), 1 for a failure of the work.
+
 - **Golden outputs on the example files:** three tests run `info`, `measure` and `check` on `examples/sample.gtl` and `examples/sample.ncd` and compare the output with the numbers worked out by hand from those files (the shapes and the box of each file, the narrowest track, the pads, and the holes inside the copper).
 
 ## [0.0.6] - The window with several layers, drills and measurements, and the Windows icon
