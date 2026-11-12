@@ -17,7 +17,7 @@
 
 ---
 
-**Honesty check - what actually runs today:** a Rust library and a command line program (`eh3d-gerberview`) with 123 tests that run on a computer: draws Gerber layers and drill files as an SVG picture, measures tracks and gaps and checks that the layers line up. It has a window (built with `--features gui`) that shows the layers one over the other with zoom and panning, but the window has not been looked at on a screen yet; it has not been tried on a machine and it has not been checked against a collection of real files.
+**Honesty check - what actually runs today:** a Rust library and a command line program (`eh3d-gerberview`) with 128 tests that run on a computer: draws Gerber layers and drill files as an SVG picture, measures tracks and gaps and checks that the layers line up. It has a window (built with `--features gui`) that shows the layers one over the other with zoom and panning, but the window has not been looked at on a screen yet; it has not been tried on a machine and it has not been checked against a collection of real files.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Version | `0.0.6` |
 | Maturity | Scaffolding |
-| Tests | 123 |
+| Tests | 128 |
 | Stack | Rust |
 | On real hardware | Not tried: nothing here has run on a machine |
 
@@ -46,7 +46,7 @@ Each line is one part of this repository and the light says how far it is today.
 |---|---|---|
 | Core | 🟡 | draws Gerber layers and drill files as an SVG picture, measures tracks and gaps and checks that the layers line up; tested on a computer with normal and damaged input, not with a collection of real files. |
 | Command line | 🟡 | `eh3d-gerberview` runs the same functions as the library and prints the result; every error comes back as a message and a non-zero exit code. |
-| Tests | 🟡 | 123 tests pass (`cargo test`), with normal cases, edge cases and damaged input. |
+| Tests | 🟡 | 128 tests pass (`cargo test`), with normal cases, edge cases and damaged input. |
 | Security | 🟡 | Plain safe Rust (`forbid(unsafe_code)`): nothing panics on the files it is given and a bad value is an error with its reason; no independent review. |
 | Window | 🟠 | Written (egui, `--features gui`): add or drop several layers and drill files, show or hide each, zoom and pan, measure, check the alignment, export the picture as SVG; its logic is tested, but it has not been built or looked at on a screen yet. |
 | Real hardware | 🔴 | Not tried: nothing here has been run on a machine. |
@@ -100,6 +100,7 @@ EH3D-GERBERVIEWER/
 ├── src/
 │   ├── align.rs                                 a part of the logic
 │   ├── browse.rs                                the list of files of the window that opens a file
+│   ├── cli_args.rs                              the arguments of the command line, the same file in every small utility
 │   ├── draw.rs                                  what the window draws: the shapes and the triangles of the regions
 │   ├── gui.rs                                   the window (egui, with the gui feature): draws the state and passes on what the person does
 │   ├── lang.rs                                  the words of the window in the eight languages
@@ -152,7 +153,7 @@ To take a picture of the window without opening it by hand, run it with `--shot 
 
 ## 🧪 Testing
 
-The suite has 123 tests (`cargo test`, run on Windows and Linux in the CI). They check the normal cases, the edge cases and damaged input: empty files, garbage and cut files never panic. The CI also runs `cargo fmt --check`, `cargo clippy` with warnings as errors and `python -I tools/ci_validate.py`.
+The suite has 128 tests (`cargo test`, run on Windows and Linux in the CI). They check the normal cases, the edge cases and damaged input: empty files, garbage and cut files never panic. The CI also runs `cargo fmt --check`, `cargo clippy` with warnings as errors and `python -I tools/ci_validate.py`.
 
 ## 🏗️ Build & Release
 

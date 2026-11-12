@@ -2,6 +2,8 @@
 // Copyright (C) 2026 JuanenRac (Electro Hobby 3D). GPL-3.0-or-later.
 #![forbid(unsafe_code)]
 
+mod cli_args;
+
 use eh3d_gerberviewer::align::{compare_boxes, holes_outside};
 use eh3d_gerberviewer::measure::{min_clearance, min_track_width, pad_centres};
 use eh3d_gerberviewer::scene::{from_excellon, from_gerber_with, Scene, SceneOptions};
@@ -185,20 +187,15 @@ fn load_drawable(path: &str, opts: &Reading) -> Result<Scene, String> {
     Ok(s)
 }
 
+/// A number of zero or more given as `--name VALUE`, or `default` when the option is not there: the option is taken out of `args` by the shared reader of the arguments.
 fn flag(args: &mut Vec<String>, name: &str, default: f64) -> Result<f64, String> {
-    if let Some(i) = args.iter().position(|a| a == name) {
-        let v = args
-            .get(i + 1)
-            .ok_or_else(|| format!("{name} needs a value"))?
-            .clone();
-        args.drain(i..=i + 1);
-        return v
-            .parse::<f64>()
+    match cli_args::flag(args, name)? {
+        Some(v) => cli_args::num(&v, name)
             .ok()
-            .filter(|n| n.is_finite() && *n >= 0.0)
-            .ok_or_else(|| format!("{name} '{v}' is not a number of zero or more"));
+            .filter(|n| *n >= 0.0)
+            .ok_or_else(|| format!("{name} '{v}' is not a number of zero or more")),
+        None => Ok(default),
     }
-    Ok(default)
 }
 
 fn short(path: &str) -> String {

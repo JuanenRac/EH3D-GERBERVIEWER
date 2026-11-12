@@ -54,6 +54,19 @@
           }
         },
         {
+          "name": "cli_args.rs",
+          "desc": {
+            "en": "the arguments of the command line, the same file in every small utility",
+            "es": "los argumentos de la línea de comandos, el mismo fichero en cada utilidad pequeña",
+            "de": "die Argumente der Kommandozeile, dieselbe Datei in jedem kleinen Werkzeug",
+            "fr": "les arguments de la ligne de commande, le même fichier dans chaque petit utilitaire",
+            "it": "gli argomenti della riga di comando, lo stesso file in ogni piccola utilità",
+            "ja": "コマンドライン引数：小さなツールすべてで同じファイル",
+            "zh": "命令行参数：每个小工具中的同一个文件",
+            "pt": "os argumentos da linha de comandos, o mesmo ficheiro em cada utilitário pequeno"
+          }
+        },
+        {
           "name": "draw.rs",
           "desc": {
             "en": "what the window draws: the shapes and the triangles of the regions",
