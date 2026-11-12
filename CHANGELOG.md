@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Fuzz tests with a fixed seed:** every prefix of the example layer, 400 damaged copies of it and bytes that are not a layer are read into a scene without a panic and without a number that is not finite.
+
 - **The options of the command line are read by the shared `cli_args.rs`:** the same file that the other small programs of the suite carry (an option with no value is an error that names it, a number must be finite), in place of a reader of its own.
 
 - The exit code follows the convention of the suite on the command line: 64 for a wrong use (an unknown command, option or setting, or something that is missing), 1 for a failure of the work.

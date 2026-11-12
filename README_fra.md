@@ -17,7 +17,7 @@
 
 ---
 
-**Vérification d'honnêteté - ce qui fonctionne aujourd'hui :** une bibliothèque Rust et un programme en ligne de commande (`eh3d-gerberview`) avec 128 tests exécutés sur un ordinateur : dessine des couches Gerber et des fichiers de perçage en image SVG, mesure pistes et espaces et vérifie que les couches s'alignent. Il a une fenêtre (compilée avec `--features gui`) qui montre les couches l'une sur l'autre avec zoom et déplacement, mais qui n'a pas encore été vue sur un écran ; il n'a pas été essayé sur une machine et n'a pas été vérifié sur une collection de fichiers réels.
+**Vérification d'honnêteté - ce qui fonctionne aujourd'hui :** une bibliothèque Rust et un programme en ligne de commande (`eh3d-gerberview`) avec 131 tests exécutés sur un ordinateur : dessine des couches Gerber et des fichiers de perçage en image SVG, mesure pistes et espaces et vérifie que les couches s'alignent. Il a une fenêtre (compilée avec `--features gui`) qui montre les couches l'une sur l'autre avec zoom et déplacement, mais qui n'a pas encore été vue sur un écran ; il n'a pas été essayé sur une machine et n'a pas été vérifié sur une collection de fichiers réels.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Version | `0.0.6` |
 | Maturité | Échafaudage |
-| Tests | 128 |
+| Tests | 131 |
 | Pile technique | Rust |
 | Sur du matériel réel | Non essayé : rien ici n'a fonctionné sur une machine |
 
@@ -46,7 +46,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 |---|---|---|
 | Cœur | 🟡 | dessine des couches Gerber et des fichiers de perçage en image SVG, mesure pistes et espaces et vérifie que les couches s'alignent ; testé sur un ordinateur avec des entrées normales et abîmées, pas avec une collection de fichiers réels. |
 | Ligne de commande | 🟡 | `eh3d-gerberview` exécute les mêmes fonctions que la bibliothèque et affiche le résultat ; chaque erreur revient sous forme de message et de code de sortie non nul. |
-| Tests | 🟡 | 128 tests passent (`cargo test`), avec des cas normaux, des cas limites et des entrées abîmées. |
+| Tests | 🟡 | 131 tests passent (`cargo test`), avec des cas normaux, des cas limites et des entrées abîmées. |
 | Sécurité | 🟡 | Rust sûr et simple (`forbid(unsafe_code)`) : rien ne panique sur les fichiers reçus et une mauvaise valeur est une erreur avec sa raison ; pas de revue indépendante. |
 | Fenêtre | 🟠 | Écrite (egui, `--features gui`) : ajouter ou déposer plusieurs couches et fichiers de perçage, afficher ou masquer chacune, zoom et déplacement, mesurer, vérifier l'alignement, exporter l'image en SVG ; sa logique est testée, mais elle n'a pas encore été compilée ni vue sur un écran. |
 | Matériel réel | 🔴 | Non essayé : rien ici n'a été exécuté sur une machine. |
@@ -113,6 +113,7 @@ EH3D-GERBERVIEWER/
 │   ├── viewport.rs                              zoom et déplacement de l'image, en simples nombres
 │   └── window.rs                                l'état de la fenêtre sans écran : couches, paramètres, mesures, vérifications, export et état
 ├── tests/
+│   ├── fuzz.rs                                  tests à graine fixe : fichiers abîmés, coupures et nombres étranges
 │   ├── golden.rs                                tests de la sortie des commandes sur les fichiers d'exemple, calculée à la main
 │   ├── viewer.rs                                tests de la bibliothèque et de la ligne de commande
 │   └── window_cli.rs                            tests qu'une compilation sans la fonctionnalité gui reste une ligne de commande
@@ -153,7 +154,7 @@ Pour prendre une capture de la fenêtre sans l'ouvrir à la main, lancez-la avec
 
 ## 🧪 Tests
 
-La suite compte 128 tests (`cargo test`, exécutés sous Windows et Linux dans le CI). Ils vérifient les cas normaux, les cas limites et les entrées abîmées : fichiers vides, bruit et fichiers coupés ne font jamais paniquer. Le CI exécute aussi `cargo fmt --check`, `cargo clippy` avec les avertissements comme erreurs et `python -I tools/ci_validate.py`.
+La suite compte 131 tests (`cargo test`, exécutés sous Windows et Linux dans le CI). Ils vérifient les cas normaux, les cas limites et les entrées abîmées : fichiers vides, bruit et fichiers coupés ne font jamais paniquer. Le CI exécute aussi `cargo fmt --check`, `cargo clippy` avec les avertissements comme erreurs et `python -I tools/ci_validate.py`.
 
 ## 🏗️ Compilation et publication
 

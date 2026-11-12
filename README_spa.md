@@ -17,7 +17,7 @@
 
 ---
 
-**Comprobación de honestidad - lo que funciona hoy:** una biblioteca Rust y un programa de línea de comandos (`eh3d-gerberview`) con 128 pruebas que se ejecutan en un ordenador: dibuja capas Gerber y ficheros de taladrado como una imagen SVG, mide pistas y huecos y comprueba que las capas encajan. Tiene una ventana (se compila con `--features gui`) que muestra las capas una sobre otra con zoom y desplazamiento, pero esa ventana todavía no se ha visto en una pantalla; no se ha probado en una máquina y no se ha comprobado con una colección de ficheros reales.
+**Comprobación de honestidad - lo que funciona hoy:** una biblioteca Rust y un programa de línea de comandos (`eh3d-gerberview`) con 131 pruebas que se ejecutan en un ordenador: dibuja capas Gerber y ficheros de taladrado como una imagen SVG, mide pistas y huecos y comprueba que las capas encajan. Tiene una ventana (se compila con `--features gui`) que muestra las capas una sobre otra con zoom y desplazamiento, pero esa ventana todavía no se ha visto en una pantalla; no se ha probado en una máquina y no se ha comprobado con una colección de ficheros reales.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Versión | `0.0.6` |
 | Madurez | Andamiaje |
-| Pruebas | 128 |
+| Pruebas | 131 |
 | Pila tecnológica | Rust |
 | En hardware real | No probado: nada de esto se ha ejecutado en una máquina |
 
@@ -46,7 +46,7 @@ Cada línea es una parte de este repositorio y la luz dice hasta dónde llega ho
 |---|---|---|
 | Núcleo | 🟡 | dibuja capas Gerber y ficheros de taladrado como una imagen SVG, mide pistas y huecos y comprueba que las capas encajan; probado en un ordenador con entradas normales y dañadas, no con una colección de ficheros reales. |
 | Línea de comandos | 🟡 | `eh3d-gerberview` ejecuta las mismas funciones que la biblioteca e imprime el resultado; cada error vuelve como mensaje y un código de salida distinto de cero. |
-| Pruebas | 🟡 | 128 pruebas pasan (`cargo test`), con casos normales, casos límite y entradas dañadas. |
+| Pruebas | 🟡 | 131 pruebas pasan (`cargo test`), con casos normales, casos límite y entradas dañadas. |
 | Seguridad | 🟡 | Rust seguro y simple (`forbid(unsafe_code)`): nada entra en pánico con los ficheros recibidos y un valor malo es un error con su motivo; sin revisión independiente. |
 | Ventana | 🟠 | Escrita (egui, `--features gui`): añadir o soltar varias capas y ficheros de taladros, mostrar u ocultar cada una, zoom y desplazamiento, medir, comprobar la alineación, exportar la imagen en SVG; su lógica está probada, pero todavía no se ha compilado ni visto en una pantalla. |
 | Hardware real | 🔴 | No probado: nada de esto se ha ejecutado en una máquina. |
@@ -113,6 +113,7 @@ EH3D-GERBERVIEWER/
 │   ├── viewport.rs                              zoom y desplazamiento de la imagen, en números simples
 │   └── window.rs                                el estado de la ventana sin pantalla: capas, parámetros, medidas, comprobaciones, exportación y estado
 ├── tests/
+│   ├── fuzz.rs                                  pruebas con semilla fija: ficheros dañados, cortes y números raros
 │   ├── golden.rs                                tests de la salida de las órdenes con los ficheros de ejemplo, calculada a mano
 │   ├── viewer.rs                                pruebas de la biblioteca y la línea de comandos
 │   └── window_cli.rs                            pruebas de que una compilación sin la característica gui sigue siendo solo línea de comandos
@@ -153,7 +154,7 @@ Para sacar una captura de la ventana sin abrirla a mano, ejecútelo con `--shot 
 
 ## 🧪 Pruebas
 
-El conjunto tiene 128 pruebas (`cargo test`, ejecutadas en Windows y Linux en el CI). Comprueban los casos normales, los casos límite y las entradas dañadas: ficheros vacíos, basura y ficheros cortados nunca provocan un pánico. El CI ejecuta además `cargo fmt --check`, `cargo clippy` con las advertencias como errores y `python -I tools/ci_validate.py`.
+El conjunto tiene 131 pruebas (`cargo test`, ejecutadas en Windows y Linux en el CI). Comprueban los casos normales, los casos límite y las entradas dañadas: ficheros vacíos, basura y ficheros cortados nunca provocan un pánico. El CI ejecuta además `cargo fmt --check`, `cargo clippy` con las advertencias como errores y `python -I tools/ci_validate.py`.
 
 ## 🏗️ Compilación y publicación
 
