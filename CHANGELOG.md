@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The validation of the CI is the reusable one of the documentation hub:** the job `validate` calls `validate.yml` of EH3D-DOCS (pinned by commit) and the check of the CHANGELOG is a job of its own.
 - **Fuzz tests with a fixed seed:** every prefix of the example layer, 400 damaged copies of it and bytes that are not a layer are read into a scene without a panic and without a number that is not finite.
 
 - **The options of the command line are read by the shared `cli_args.rs`:** the same file that the other small programs of the suite carry (an option with no value is an error that names it, a number must be finite), in place of a reader of its own.
