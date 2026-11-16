@@ -63,12 +63,14 @@ fn too_large(size: usize, limit: usize) -> String {
 
 const HELP: &str = "eh3d-gerberview: a light viewer of Gerber layers and drill files
 
-  eh3d-gerberview render OUT.svg LAYER... [--opacity 0.8] [--margin 2]   draw the layers in one SVG picture
+  eh3d-gerberview render OUT.svg LAYER... [--opacity 0.8] [--margin 2] [--exact]   draw the layers in one SVG picture
   eh3d-gerberview info LAYER...                                          size, shapes and what was not drawn
   eh3d-gerberview measure LAYER                                          narrowest track and smallest gap between pads and tracks
-  eh3d-gerberview check LAYER... [--tolerance 0.5]                       do the layers line up? are the holes inside the copper?
+  eh3d-gerberview check LAYER... [--tolerance 0.5] [--exact]             do the layers line up? are the holes inside the copper?
   eh3d-gerberview [gui] [LAYER...]                                       the window (a build with --features gui): with no arguments, or with a single layer, it opens; the commands above never open it
   eh3d-gerberview gui [FILE...] --shot OUT.png [--size WxH] [--theme forge|dark|light] [--wait N] [--lang CODE] [--replace]   a picture of the window (a build with --features gui)
+
+render and check write on the error output what a layer is not drawn exactly (clear polarity, step and repeat, macro apertures); with --exact they refuse to go on when there is any.
 
 Every command also takes --max-bytes N (the largest file read, 268435456 by default; a larger one is refused before it is read) and --arc-tolerance MM (how closely
 arcs are followed, 0.005 by default).
@@ -198,6 +200,18 @@ fn flag(args: &mut Vec<String>, name: &str, default: f64) -> Result<f64, String>
     }
 }
 
+/// Writes on the error output what each scene does not draw exactly (`note: LAYER: ...`) and says whether there was any.
+fn say_notes<'a>(scenes: impl Iterator<Item = (&'a str, &'a Scene)>) -> bool {
+    let mut any = false;
+    for (name, scene) in scenes {
+        for n in &scene.notes {
+            eprintln!("note: {name}: not drawn exactly: {n}");
+            any = true;
+        }
+    }
+    any
+}
+
 fn short(path: &str) -> String {
     path.rsplit(['/', '\\']).next().unwrap_or(path).to_string()
 }
@@ -232,10 +246,12 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
         arc_tolerance_mm,
     };
     if let Some(o) = args.iter().find(|a| {
-        a.starts_with("--") && !["--opacity", "--margin", "--tolerance"].contains(&a.as_str())
+        a.starts_with("--")
+            && !["--opacity", "--margin", "--tolerance", "--exact"].contains(&a.as_str())
     }) {
         return Err(format!("{o}: unknown option (see help)"));
     }
+    let exact = cli_args::switch(&mut args, "--exact");
     match cmd.as_str() {
         "render" => {
             let opacity = flag(&mut args, "--opacity", 0.85)?;
@@ -261,6 +277,10 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
                     })
                 })
                 .collect::<Result<Vec<_>, String>>()?;
+            let lossy = say_notes(layers.iter().map(|l| (l.name.as_str(), &l.scene)));
+            if exact && lossy {
+                return Err("render: a layer is not drawn exactly (see the notes above); nothing was written".into());
+            }
             fs::write(&out, render(&layers, margin)).map_err(|e| format!("{out}: {e}"))?;
             println!("{} layers drawn in {out}", layers.len());
             Ok(())
@@ -317,6 +337,10 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
                     Ok((short(p), drill, scene))
                 })
                 .collect::<Result<Vec<_>, String>>()?;
+            let lossy = say_notes(scenes.iter().map(|(n, _, s)| (n.as_str(), s)));
+            if exact && lossy {
+                return Err("check: a layer is not drawn exactly (see the notes above), so what it says about the layers cannot be trusted".into());
+            }
             let boxes: Vec<_> = scenes
                 .iter()
                 .filter(|(_, d, _)| !*d)

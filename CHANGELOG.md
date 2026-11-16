@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **`render` and `check` say what a layer is not drawn exactly:** each note (clear polarity drawn as dark, step and repeat, a macro aperture) goes to the error output, and the new option `--exact` makes both refuse to write the picture or to judge the layers while there is any.
+
 ## [0.0.7] - Fuzz and golden-output tests and the shared command-line reader
 
 - **The shared validation tools are updated:** the validator also runs the workflow and lessons checks of the suite with their latest rules, including a check to run before every push.
