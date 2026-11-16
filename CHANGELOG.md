@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The README says the maturity of the manifest:** the badge and the Maturity row of the eight READMEs read functional, as the manifest does, and the check of the status lights now fails when they differ.
 - **`render` writes the picture through a temporary file and never over a layer:** the SVG is written beside and renamed, so a failure leaves no half picture under its name, and an output that is one of the layers once the paths are resolved (`./a.txt` for `a.txt`) is refused.
 - **`render` and `check` say what a layer is not drawn exactly:** each note (clear polarity drawn as dark, step and repeat, a macro aperture) goes to the error output, and the new option `--exact` makes both refuse to write the picture or to judge the layers while there is any.
 
