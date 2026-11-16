@@ -212,6 +212,25 @@ fn say_notes<'a>(scenes: impl Iterator<Item = (&'a str, &'a Scene)>) -> bool {
     any
 }
 
+/// True when two paths name the same file (once resolved; by their text when one does not exist yet).
+fn same_file(a: &Path, b: &Path) -> bool {
+    match (a.canonicalize(), b.canonicalize()) {
+        (Ok(x), Ok(y)) => x == y,
+        _ => a == b,
+    }
+}
+
+/// Written beside and renamed, so that a file is never left half written.
+fn write_atomic(path: &Path, text: &str) -> Result<(), String> {
+    let tmp = std::path::PathBuf::from(format!("{}.tmp", path.display()));
+    fs::write(&tmp, text)
+        .and_then(|()| fs::rename(&tmp, path))
+        .map_err(|e| {
+            let _ = fs::remove_file(&tmp);
+            format!("{}: {e}", path.display())
+        })
+}
+
 fn short(path: &str) -> String {
     path.rsplit(['/', '\\']).next().unwrap_or(path).to_string()
 }
@@ -281,7 +300,16 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
             if exact && lossy {
                 return Err("render: a layer is not drawn exactly (see the notes above); nothing was written".into());
             }
-            fs::write(&out, render(&layers, margin)).map_err(|e| format!("{out}: {e}"))?;
+            // never over a layer, whatever the way the path is written
+            if args
+                .iter()
+                .any(|p| same_file(Path::new(p), Path::new(&out)))
+            {
+                return Err(format!(
+                    "render: {out} is one of the layers; the picture would be written over it"
+                ));
+            }
+            write_atomic(Path::new(&out), &render(&layers, margin))?;
             println!("{} layers drawn in {out}", layers.len());
             Ok(())
         }
