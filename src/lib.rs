@@ -23,6 +23,12 @@ pub fn looks_like_drill(text: &str) -> bool {
         .map(str::trim)
         .find(|l| !l.is_empty() && !l.starts_with(';'))
         .is_some_and(|l| {
-            l.eq_ignore_ascii_case("M48") || l.to_ascii_uppercase().starts_with("M48,")
+            // the header, alone or followed by a comma, a comment or a blank (`M48;made by`, `M48 METRIC`); `M481` is not it
+            let upper = l.to_ascii_uppercase();
+            upper.strip_prefix("M48").is_some_and(|rest| {
+                rest.is_empty()
+                    || rest.starts_with([',', ';'])
+                    || rest.starts_with(char::is_whitespace)
+            })
         })
 }

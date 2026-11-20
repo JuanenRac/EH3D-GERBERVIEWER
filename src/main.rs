@@ -270,10 +270,27 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
     }) {
         return Err(format!("{o}: unknown option (see help)"));
     }
+    // an option of another command is a wrong use, not a layer that cannot be read
+    let takes: &[&str] = match cmd.as_str() {
+        "render" => &["--opacity", "--margin", "--exact"],
+        "check" => &["--tolerance", "--exact"],
+        _ => &[],
+    };
+    if matches!(cmd.as_str(), "render" | "info" | "measure" | "check") {
+        if let Some(o) = args.iter().find(|a| {
+            ["--opacity", "--margin", "--tolerance", "--exact"].contains(&a.as_str())
+                && !takes.contains(&a.as_str())
+        }) {
+            return Err(format!("{cmd}: {o} is not an option of {cmd} (see help)"));
+        }
+    }
     let exact = cli_args::switch(&mut args, "--exact");
     match cmd.as_str() {
         "render" => {
             let opacity = flag(&mut args, "--opacity", 0.85)?;
+            if opacity > 1.0 {
+                return Err(format!("--opacity {opacity} must be from 0 to 1"));
+            }
             let margin = flag(&mut args, "--margin", 2.0)?;
             if args.len() < 2 {
                 return Err("render needs an output file and at least one layer".into());

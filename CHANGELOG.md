@@ -8,6 +8,9 @@ All notable changes to this project are documented here.
 - **The README says the maturity of the manifest:** the badge and the Maturity row of the eight READMEs read functional, as the manifest does, and the check of the status lights now fails when they differ.
 - **`render` writes the picture through a temporary file and never over a layer:** the SVG is written beside and renamed, so a failure leaves no half picture under its name, and an output that is one of the layers once the paths are resolved (`./a.txt` for `a.txt`) is refused.
 - **`render` and `check` say what a layer is not drawn exactly:** each note (clear polarity drawn as dark, step and repeat, a macro aperture) goes to the error output, and the new option `--exact` makes both refuse to write the picture or to judge the layers while there is any.
+- **The drill header may be followed by a comment or a setting:** `M48;made by...`, `M48 ;...` and `M48 METRIC` are drill files whatever their name is, as before for `M48` and `M48,...`; `M481` and `M48X1` still are not.
+- **An option of another command is refused by name:** `info --exact`, `measure --opacity 0.5`, `check --margin 1` and `render --tolerance 1` end with 64 and say which option does not belong to which command, instead of reading the option as a layer that cannot be opened.
+- **`render` refuses an opacity above 1:** `--opacity 7` ends with 64 (the picture used to clamp it to 1 without saying); 0 to 1 is accepted.
 
 ## [0.0.7] - Fuzz and golden-output tests and the shared command-line reader
 

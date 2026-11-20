@@ -422,3 +422,15 @@ fn the_public_gerber_files_of_the_readers_are_drawn_inside_the_box_their_summary
         "only {checked} files were compared"
     );
 }
+
+#[test]
+fn the_excellon_header_may_be_followed_by_a_comment_or_a_setting_but_not_by_more_digits() {
+    use eh3d_gerberviewer::looks_like_drill;
+    assert!(looks_like_drill("M48;made by a CAD program\nMETRIC\n"));
+    assert!(looks_like_drill("M48 ;made by a CAD program\nMETRIC\n"));
+    assert!(looks_like_drill("M48 METRIC,TZ\nT1C0.8\n"));
+    assert!(looks_like_drill("\n; first\n\tm48\tINCH\n"));
+    assert!(!looks_like_drill("M48X1\n"));
+    assert!(!looks_like_drill("M4\n"));
+    assert!(!looks_like_drill("M480\n"));
+}
