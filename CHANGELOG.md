@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.0.8] - Stricter drill header and option checks
+
 - **The CI and the release build take the shared libraries at their newest releases:** the pins of the sibling repositories in the workflows are raised to the releases the program now needs, so that the build and the binaries of a release use them.
 - **The README says the maturity of the manifest:** the badge and the Maturity row of the eight READMEs read functional, as the manifest does, and the check of the status lights now fails when they differ.
 - **`render` writes the picture through a temporary file and never over a layer:** the SVG is written beside and renamed, so a failure leaves no half picture under its name, and an output that is one of the layers once the paths are resolved (`./a.txt` for `a.txt`) is refused.
