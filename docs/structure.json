@@ -80,6 +80,19 @@
           }
         },
         {
+          "name": "gap.rs",
+          "desc": {
+            "en": "the exact gap between two objects of any kind, and between two layers",
+            "es": "la separación exacta entre dos objetos de cualquier tipo, y entre dos capas",
+            "de": "der genaue Abstand zwischen zwei Objekten jeder Art und zwischen zwei Lagen",
+            "fr": "l'écart exact entre deux objets de tout type, et entre deux couches",
+            "it": "la distanza esatta tra due oggetti di qualsiasi tipo e tra due livelli",
+            "ja": "あらゆる種類の2つの物体間、および2つのレイヤー間の正確な間隔",
+            "zh": "任意类型两个对象之间以及两个图层之间的精确间距",
+            "pt": "a separação exata entre dois objetos de qualquer tipo, e entre duas camadas"
+          }
+        },
+        {
           "name": "gui.rs",
           "desc": {
             "en": "the window (egui, with the gui feature): draws the state and passes on what the person does",
@@ -103,6 +116,19 @@
             "ja": "ウィンドウの文言（8言語）",
             "zh": "窗口的文字（八种语言）",
             "pt": "as palavras da janela nos oito idiomas"
+          }
+        },
+        {
+          "name": "layers.rs",
+          "desc": {
+            "en": "the stack of layers: opacity, order, warnings and a software picture",
+            "es": "la pila de capas: opacidad, orden, avisos y una imagen por software",
+            "de": "der Lagenstapel: Deckkraft, Reihenfolge, Warnungen und ein Software-Bild",
+            "fr": "la pile de couches : opacité, ordre, avertissements et une image logicielle",
+            "it": "la pila dei livelli: opacità, ordine, avvisi e un'immagine software",
+            "ja": "レイヤーの積み重ね：不透明度、順序、警告、ソフトウェア描画",
+            "zh": "图层堆栈：不透明度、顺序、警告和软件渲染图像",
+            "pt": "a pilha de camadas: opacidade, ordem, avisos e uma imagem por software"
           }
         },
         {
@@ -145,6 +171,19 @@
           }
         },
         {
+          "name": "ruler.rs",
+          "desc": {
+            "en": "the ruler: snap to vertices and pad centres, distance and angle",
+            "es": "la regla: ajuste a vértices y centros de pad, distancia y ángulo",
+            "de": "das Lineal: Einrasten an Eckpunkten und Pad-Mitten, Abstand und Winkel",
+            "fr": "la règle : accrochage aux sommets et centres de pastille, distance et angle",
+            "it": "il righello: aggancio a vertici e centri di pad, distanza e angolo",
+            "ja": "定規：頂点とパッド中心へのスナップ、距離と角度",
+            "zh": "标尺：吸附到顶点和焊盘中心，距离和角度",
+            "pt": "a régua: ajuste a vértices e centros de pad, distância e ângulo"
+          }
+        },
+        {
           "name": "scene.rs",
           "desc": {
             "en": "a part of the logic",
@@ -155,6 +194,19 @@
             "ja": "ロジックの一部",
             "zh": "逻辑的一部分",
             "pt": "uma parte da lógica"
+          }
+        },
+        {
+          "name": "settings.rs",
+          "desc": {
+            "en": "the settings from the configuration file, with a range for each",
+            "es": "los ajustes del fichero de configuración, con un rango para cada uno",
+            "de": "die Einstellungen aus der Konfigurationsdatei, jeweils mit Wertebereich",
+            "fr": "les réglages du fichier de configuration, chacun avec sa plage",
+            "it": "le impostazioni del file di configurazione, ciascuna con il suo intervallo",
+            "ja": "設定ファイルの設定：それぞれに範囲あり",
+            "zh": "配置文件中的设置，每项都有范围",
+            "pt": "as definições do ficheiro de configuração, cada uma com o seu intervalo"
           }
         },
         {
@@ -269,6 +321,58 @@
           }
         },
         {
+          "name": "gap.rs",
+          "desc": {
+            "en": "tests of the gap: formulas, touching, order and the command",
+            "es": "pruebas de la separación: fórmulas, contacto, orden y el comando",
+            "de": "Tests des Abstands: Formeln, Berührung, Reihenfolge und der Befehl",
+            "fr": "tests de l'écart : formules, contact, ordre et la commande",
+            "it": "test della distanza: formule, contatto, ordine e il comando",
+            "ja": "間隔のテスト：公式、接触、順序、コマンド",
+            "zh": "间距测试：公式、接触、顺序和命令",
+            "pt": "testes da separação: fórmulas, contacto, ordem e o comando"
+          }
+        },
+        {
+          "name": "layers.rs",
+          "desc": {
+            "en": "tests of the stack: opacity as a whole, order, limits and warnings",
+            "es": "pruebas de la pila: opacidad completa, orden, límites y avisos",
+            "de": "Tests des Stapels: Deckkraft als Ganzes, Reihenfolge, Grenzen, Warnungen",
+            "fr": "tests de la pile : opacité d'ensemble, ordre, limites et avertissements",
+            "it": "test della pila: opacità complessiva, ordine, limiti e avvisi",
+            "ja": "スタックのテスト：全体の不透明度、順序、上限、警告",
+            "zh": "堆栈测试：整体不透明度、顺序、限制和警告",
+            "pt": "testes da pilha: opacidade no todo, ordem, limites e avisos"
+          }
+        },
+        {
+          "name": "ruler.rs",
+          "desc": {
+            "en": "tests of the ruler: snap, tolerance, units, angle and the command",
+            "es": "pruebas de la regla: ajuste, tolerancia, unidades, ángulo y el comando",
+            "de": "Tests des Lineals: Einrasten, Toleranz, Einheiten, Winkel und der Befehl",
+            "fr": "tests de la règle : accrochage, tolérance, unités, angle et la commande",
+            "it": "test del righello: aggancio, tolleranza, unità, angolo e il comando",
+            "ja": "定規のテスト：スナップ、許容値、単位、角度、コマンド",
+            "zh": "标尺测试：吸附、容差、单位、角度和命令",
+            "pt": "testes da régua: ajuste, tolerância, unidades, ângulo e o comando"
+          }
+        },
+        {
+          "name": "settings.rs",
+          "desc": {
+            "en": "tests of the configuration file: ranges, lines, limits and damaged copies",
+            "es": "pruebas del fichero de configuración: rangos, líneas, límites y copias dañadas",
+            "de": "Tests der Konfigurationsdatei: Bereiche, Zeilen, Grenzen, beschädigte Kopien",
+            "fr": "tests du fichier de configuration : plages, lignes, limites et copies abîmées",
+            "it": "test del file di configurazione: intervalli, righe, limiti e copie danneggiate",
+            "ja": "設定ファイルのテスト：範囲、行、上限、破損コピー",
+            "zh": "配置文件测试：范围、行号、限制和损坏的副本",
+            "pt": "testes do ficheiro de configuração: intervalos, linhas, limites e cópias danificadas"
+          }
+        },
+        {
           "name": "reqs.rs",
           "desc": {
             "en": "tests of the register of requirements: each names a test that exists and a state that agrees",
@@ -312,6 +416,19 @@
             "ja": "試すためのサンプル",
             "zh": "试用的示例",
             "pt": "um exemplo para experimentar o programa"
+          }
+        },
+        {
+          "name": "gerberview.cfg",
+          "desc": {
+            "en": "the settings with their defaults, to copy and change",
+            "es": "los ajustes con sus valores por defecto, para copiar y cambiar",
+            "de": "die Einstellungen mit ihren Standardwerten zum Kopieren und Ändern",
+            "fr": "les réglages avec leurs valeurs par défaut, à copier et modifier",
+            "it": "le impostazioni con i valori predefiniti, da copiare e modificare",
+            "ja": "既定値つきの設定：コピーして変更できます",
+            "zh": "带默认值的设置，可复制后修改",
+            "pt": "as definições com os valores por omissão, para copiar e alterar"
           }
         }
       ]

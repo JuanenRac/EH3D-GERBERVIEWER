@@ -17,7 +17,7 @@
 
 ---
 
-**Honesty check - what actually runs today:** a Rust library and a command line program (`eh3d-gerberview`) with 147 tests that run on a computer: draws Gerber layers and drill files as an SVG picture, measures tracks and gaps and checks that the layers line up. It has a window (built with `--features gui`) that shows the layers one over the other with zoom and panning, but the window has not been looked at on a screen yet; it has not been tried on a machine and it has not been checked against a collection of real files.
+**Honesty check - what actually runs today:** a Rust library and a command line program (`eh3d-gerberview`) with 185 tests that run on a computer: draws Gerber layers and drill files as an SVG picture, measures tracks and gaps and checks that the layers line up. It has a window (built with `--features gui`) that shows the layers one over the other with zoom and panning, but the window has not been looked at on a screen yet; it has not been tried on a machine and it has not been checked against a collection of real files.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Version | `0.0.8` |
 | Maturity | Functional |
-| Tests | 147 |
+| Tests | 185 |
 | Stack | Rust |
 | On real hardware | Not tried: nothing here has run on a machine |
 
@@ -46,7 +46,7 @@ Each line is one part of this repository and the light says how far it is today.
 |---|---|---|
 | Core | 🟡 | draws Gerber layers and drill files as an SVG picture, measures tracks and gaps and checks that the layers line up; tested on a computer with normal and damaged input, not with a collection of real files. |
 | Command line | 🟡 | `eh3d-gerberview` runs the same functions as the library and prints the result; every error comes back as a message and a non-zero exit code. |
-| Tests | 🟡 | 147 tests pass (`cargo test`), with normal cases, edge cases and damaged input. |
+| Tests | 🟡 | 185 tests pass (`cargo test`), with normal cases, edge cases and damaged input. |
 | Security | 🟡 | Plain safe Rust (`forbid(unsafe_code)`): nothing panics on the files it is given and a bad value is an error with its reason; no independent review. |
 | Window | 🟠 | Written (egui, `--features gui`): add or drop several layers and drill files, show or hide each, zoom and pan, measure, check the alignment, export the picture as SVG; its logic is tested, but it has not been built or looked at on a screen yet. |
 | Real hardware | 🔴 | Not tried: nothing here has been run on a machine. |
@@ -93,7 +93,7 @@ How the parts of this repository fit together: who uses it, what it holds and wh
 
 The library is `eh3d_gerberviewer` (`use eh3d_gerberviewer::...`); the command line is `eh3d-gerberview`. The commands are these; each prints its result on the standard output and reports an error on the standard error with a non-zero exit code. There is no network access.
 
-The exit code follows the convention of the suite: 0 when the run went well, 1 when the work failed (for example a file that cannot be read) and 64 when the command line was used wrongly (an unknown command or option, or something a command needs that is missing).
+The exit code follows the convention of the suite: 0 when the run went well, 1 when the work failed (for example a file that cannot be read) and 64 when the command line was used wrongly (an unknown command or option, or something a command needs that is missing). `gap --min` ends with 2 when the gap is below the minimum: the check ran and was not passed.
 
 ```text
 EH3D-GERBERVIEWER/
@@ -102,12 +102,16 @@ EH3D-GERBERVIEWER/
 │   ├── browse.rs                                the list of files of the window that opens a file
 │   ├── cli_args.rs                              the arguments of the command line, the same file in every small utility
 │   ├── draw.rs                                  what the window draws: the shapes and the triangles of the regions
+│   ├── gap.rs                                   the exact gap between two objects of any kind, and between two layers
 │   ├── gui.rs                                   the window (egui, with the gui feature): draws the state and passes on what the person does
 │   ├── lang.rs                                  the words of the window in the eight languages
+│   ├── layers.rs                                the stack of layers: opacity, order, warnings and a software picture
 │   ├── lib.rs                                   the library: what every command uses
 │   ├── main.rs                                  the command line
 │   ├── measure.rs                               a part of the logic
+│   ├── ruler.rs                                 the ruler: snap to vertices and pad centres, distance and angle
 │   ├── scene.rs                                 a part of the logic
+│   ├── settings.rs                              the settings from the configuration file, with a range for each
 │   ├── shot.rs                                  the picture mode of the window (--shot): its arguments, read and checked without a screen
 │   ├── svg.rs                                   a part of the logic
 │   ├── viewport.rs                              zoom and pan of the picture, in plain numbers
@@ -116,12 +120,22 @@ EH3D-GERBERVIEWER/
 │   ├── fuzz.rs                                  fuzz tests with a fixed seed: damaged files, cuts and odd numbers
 │   ├── golden.rs                                tests of the output of the commands on the example files, worked out by hand
 │   ├── viewer.rs                                tests of the library and the command line
-│   └── window_cli.rs                            tests that a build without the gui feature stays a command line
+│   ├── window_cli.rs                            tests that a build without the gui feature stays a command line
+│   ├── gap.rs                                   tests of the gap: formulas, touching, order and the command
+│   ├── layers.rs                                tests of the stack: opacity as a whole, order, limits and warnings
+│   ├── ruler.rs                                 tests of the ruler: snap, tolerance, units, angle and the command
+│   ├── settings.rs                              tests of the configuration file: ranges, lines, limits and damaged copies
+│   └── reqs.rs                                  tests of the register of requirements: each names a test that exists and a state that agrees
 ├── examples/
 │   ├── sample.gtl                               a sample to try the program with
-│   └── sample.ncd                               a sample to try the program with
+│   ├── sample.ncd                               a sample to try the program with
+│   └── gerberview.cfg                           the settings with their defaults, to copy and change
 ├── docs/
 │   ├── architecture.json                        data of the Architecture picture
+│   ├── NOT_YET.md                               good ideas that are left out of this version, with why and when
+│   ├── REQUIREMENTS.md                          the register of requirements: state, evidence and the test of each
+│   ├── SCOPE.md                                 what the program is for, what it will not do and what it never decides
+│   ├── STATUS.md                                what exists, what is missing and what is still open
 │   └── structure.json                           data of the Repository Structure picture
 ├── tools/                                       CI check, README check and the picture tools
 ├── images/                                      banner and the Architecture and Repository Structure pictures
@@ -130,13 +144,14 @@ EH3D-GERBERVIEWER/
 ├── Cargo.toml Cargo.lock                        the workspace and its locked dependencies
 ├── rust-toolchain.toml                          the pinned Rust toolchain
 ├── CHANGELOG.md                                 what changed in each version
+├── AGENTS.md                                    the rules for anyone who changes the repository
 ├── SECURITY.md SUPPORT.md                       how to report a vulnerability and where to ask
 └── CONTRIBUTING.md CODE_OF_CONDUCT.md LICENSE   how to contribute, the code of conduct and the licence
 ```
 
 ## ⚙️ Configuration
 
-There is no configuration file yet: what a person chooses is given as arguments of the command line (see Interfaces) and every default is written in the help of the command (`eh3d-gerberview help`). The fixed limits live in the code as named constants and are covered by tests.
+The values that a person tunes live in a configuration file of `key = value` lines (`examples/gerberview.cfg` lists every key with its default and its range): the snap tolerance of the ruler, the unit of a measure, the opacities of the layers and the limits of layers and of compared pairs. The commands `ruler` and `gap` read it with `--config FILE`; a value outside its range, an unknown key or a key written twice is an error that names its line. The rest is given as arguments of the command line (see Interfaces), and every default is written in the help of the command (`eh3d-gerberview help`). The fixed limits live in the code as named constants and are covered by tests.
 
 ## 🚀 Quick start
 
@@ -154,7 +169,7 @@ To take a picture of the window without opening it by hand, run it with `--shot 
 
 ## 🧪 Testing
 
-The suite has 147 tests (`cargo test`, run on Windows and Linux in the CI). They check the normal cases, the edge cases and damaged input: empty files, garbage and cut files never panic. The CI also runs `cargo fmt --check`, `cargo clippy` with warnings as errors and `python -I tools/ci_validate.py`.
+The suite has 185 tests (`cargo test`, run on Windows and Linux in the CI). They check the normal cases, the edge cases and damaged input: empty files, garbage and cut files never panic. The CI also runs `cargo fmt --check`, `cargo clippy` with warnings as errors and `python -I tools/ci_validate.py`.
 
 ## 🏗️ Build & Release
 
@@ -180,12 +195,16 @@ EH3D-GERBERVIEWER/
 │   ├── browse.rs                                the list of files of the window that opens a file
 │   ├── cli_args.rs                              the arguments of the command line, the same file in every small utility
 │   ├── draw.rs                                  what the window draws: the shapes and the triangles of the regions
+│   ├── gap.rs                                   the exact gap between two objects of any kind, and between two layers
 │   ├── gui.rs                                   the window (egui, with the gui feature): draws the state and passes on what the person does
 │   ├── lang.rs                                  the words of the window in the eight languages
+│   ├── layers.rs                                the stack of layers: opacity, order, warnings and a software picture
 │   ├── lib.rs                                   the library: what every command uses
 │   ├── main.rs                                  the command line
 │   ├── measure.rs                               a part of the logic
+│   ├── ruler.rs                                 the ruler: snap to vertices and pad centres, distance and angle
 │   ├── scene.rs                                 a part of the logic
+│   ├── settings.rs                              the settings from the configuration file, with a range for each
 │   ├── shot.rs                                  the picture mode of the window (--shot): its arguments, read and checked without a screen
 │   ├── svg.rs                                   a part of the logic
 │   ├── viewport.rs                              zoom and pan of the picture, in plain numbers
@@ -195,10 +214,15 @@ EH3D-GERBERVIEWER/
 │   ├── golden.rs                                tests of the output of the commands on the example files, worked out by hand
 │   ├── viewer.rs                                tests of the library and the command line
 │   ├── window_cli.rs                            tests that a build without the gui feature stays a command line
+│   ├── gap.rs                                   tests of the gap: formulas, touching, order and the command
+│   ├── layers.rs                                tests of the stack: opacity as a whole, order, limits and warnings
+│   ├── ruler.rs                                 tests of the ruler: snap, tolerance, units, angle and the command
+│   ├── settings.rs                              tests of the configuration file: ranges, lines, limits and damaged copies
 │   └── reqs.rs                                  tests of the register of requirements: each names a test that exists and a state that agrees
 ├── examples/
 │   ├── sample.gtl                               a sample to try the program with
-│   └── sample.ncd                               a sample to try the program with
+│   ├── sample.ncd                               a sample to try the program with
+│   └── gerberview.cfg                           the settings with their defaults, to copy and change
 ├── docs/
 │   ├── architecture.json                        data of the Architecture picture
 │   ├── NOT_YET.md                               good ideas that are left out of this version, with why and when

@@ -17,7 +17,7 @@
 
 ---
 
-**Vérification d'honnêteté - ce qui fonctionne aujourd'hui :** une bibliothèque Rust et un programme en ligne de commande (`eh3d-gerberview`) avec 147 tests exécutés sur un ordinateur : dessine des couches Gerber et des fichiers de perçage en image SVG, mesure pistes et espaces et vérifie que les couches s'alignent. Il a une fenêtre (compilée avec `--features gui`) qui montre les couches l'une sur l'autre avec zoom et déplacement, mais qui n'a pas encore été vue sur un écran ; il n'a pas été essayé sur une machine et n'a pas été vérifié sur une collection de fichiers réels.
+**Vérification d'honnêteté - ce qui fonctionne aujourd'hui :** une bibliothèque Rust et un programme en ligne de commande (`eh3d-gerberview`) avec 185 tests exécutés sur un ordinateur : dessine des couches Gerber et des fichiers de perçage en image SVG, mesure pistes et espaces et vérifie que les couches s'alignent. Il a une fenêtre (compilée avec `--features gui`) qui montre les couches l'une sur l'autre avec zoom et déplacement, mais qui n'a pas encore été vue sur un écran ; il n'a pas été essayé sur une machine et n'a pas été vérifié sur une collection de fichiers réels.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Version | `0.0.8` |
 | Maturité | Fonctionnel |
-| Tests | 147 |
+| Tests | 185 |
 | Pile technique | Rust |
 | Sur du matériel réel | Non essayé : rien ici n'a fonctionné sur une machine |
 
@@ -46,7 +46,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 |---|---|---|
 | Cœur | 🟡 | dessine des couches Gerber et des fichiers de perçage en image SVG, mesure pistes et espaces et vérifie que les couches s'alignent ; testé sur un ordinateur avec des entrées normales et abîmées, pas avec une collection de fichiers réels. |
 | Ligne de commande | 🟡 | `eh3d-gerberview` exécute les mêmes fonctions que la bibliothèque et affiche le résultat ; chaque erreur revient sous forme de message et de code de sortie non nul. |
-| Tests | 🟡 | 147 tests passent (`cargo test`), avec des cas normaux, des cas limites et des entrées abîmées. |
+| Tests | 🟡 | 185 tests passent (`cargo test`), avec des cas normaux, des cas limites et des entrées abîmées. |
 | Sécurité | 🟡 | Rust sûr et simple (`forbid(unsafe_code)`) : rien ne panique sur les fichiers reçus et une mauvaise valeur est une erreur avec sa raison ; pas de revue indépendante. |
 | Fenêtre | 🟠 | Écrite (egui, `--features gui`) : ajouter ou déposer plusieurs couches et fichiers de perçage, afficher ou masquer chacune, zoom et déplacement, mesurer, vérifier l'alignement, exporter l'image en SVG ; sa logique est testée, mais elle n'a pas encore été compilée ni vue sur un écran. |
 | Matériel réel | 🔴 | Non essayé : rien ici n'a été exécuté sur une machine. |
@@ -93,7 +93,7 @@ Comment les parties de ce dépôt s'articulent : qui l'utilise, ce qu'il contien
 
 La bibliothèque est `eh3d_gerberviewer` (`use eh3d_gerberviewer::...`) ; la ligne de commande est `eh3d-gerberview`. Les commandes sont celles-ci ; chacune affiche son résultat sur la sortie standard et signale une erreur sur la sortie d'erreur avec un code de sortie non nul. Il n'y a pas d'accès réseau.
 
-Le code de sortie suit la convention de la suite : 0 si l'exécution s'est bien passée, 1 si le travail a échoué (par exemple un fichier illisible) et 64 si la ligne de commande a été mal utilisée (une commande ou une option inconnue, ou quelque chose dont une commande a besoin et qui manque).
+Le code de sortie suit la convention de la suite : 0 si l'exécution s'est bien passée, 1 si le travail a échoué (par exemple un fichier illisible) et 64 si la ligne de commande a été mal utilisée (une commande ou une option inconnue, ou quelque chose dont une commande a besoin et qui manque). `gap --min` se termine par 2 quand l'écart est inférieur au minimum : la vérification a été faite et n'a pas été réussie.
 
 ```text
 EH3D-GERBERVIEWER/
@@ -102,12 +102,16 @@ EH3D-GERBERVIEWER/
 │   ├── browse.rs                                la liste des fichiers de la fenêtre d'ouverture d'un fichier
 │   ├── cli_args.rs                              les arguments de la ligne de commande, le même fichier dans chaque petit utilitaire
 │   ├── draw.rs                                  ce que dessine la fenêtre : les formes et les triangles des régions
+│   ├── gap.rs                                   l'écart exact entre deux objets de tout type, et entre deux couches
 │   ├── gui.rs                                   la fenêtre (egui, avec la fonctionnalité gui) : dessine l'état et transmet ce que fait la personne
 │   ├── lang.rs                                  les mots de la fenêtre dans les huit langues
+│   ├── layers.rs                                la pile de couches : opacité, ordre, avertissements et une image logicielle
 │   ├── lib.rs                                   la bibliothèque : ce que chaque commande utilise
 │   ├── main.rs                                  la ligne de commande
 │   ├── measure.rs                               une partie de la logique
+│   ├── ruler.rs                                 la règle : accrochage aux sommets et centres de pastille, distance et angle
 │   ├── scene.rs                                 une partie de la logique
+│   ├── settings.rs                              les réglages du fichier de configuration, chacun avec sa plage
 │   ├── shot.rs                                  le mode capture de la fenêtre (--shot) : ses arguments, lus et vérifiés sans écran
 │   ├── svg.rs                                   une partie de la logique
 │   ├── viewport.rs                              zoom et déplacement de l'image, en simples nombres
@@ -116,12 +120,22 @@ EH3D-GERBERVIEWER/
 │   ├── fuzz.rs                                  tests à graine fixe : fichiers abîmés, coupures et nombres étranges
 │   ├── golden.rs                                tests de la sortie des commandes sur les fichiers d'exemple, calculée à la main
 │   ├── viewer.rs                                tests de la bibliothèque et de la ligne de commande
-│   └── window_cli.rs                            tests qu'une compilation sans la fonctionnalité gui reste une ligne de commande
+│   ├── window_cli.rs                            tests qu'une compilation sans la fonctionnalité gui reste une ligne de commande
+│   ├── gap.rs                                   tests de l'écart : formules, contact, ordre et la commande
+│   ├── layers.rs                                tests de la pile : opacité d'ensemble, ordre, limites et avertissements
+│   ├── ruler.rs                                 tests de la règle : accrochage, tolérance, unités, angle et la commande
+│   ├── settings.rs                              tests du fichier de configuration : plages, lignes, limites et copies abîmées
+│   └── reqs.rs                                  tests du registre des exigences : chacune nomme un test existant et un état cohérent
 ├── examples/
 │   ├── sample.gtl                               un exemple pour essayer le programme
-│   └── sample.ncd                               un exemple pour essayer le programme
+│   ├── sample.ncd                               un exemple pour essayer le programme
+│   └── gerberview.cfg                           les réglages avec leurs valeurs par défaut, à copier et modifier
 ├── docs/
 │   ├── architecture.json                        données de l'image d'Architecture
+│   ├── NOT_YET.md                               de bonnes idées hors de cette version, avec pourquoi et quand
+│   ├── REQUIREMENTS.md                          le registre des exigences : état, preuve et test de chacune
+│   ├── SCOPE.md                                 à quoi il sert, ce qu'il ne fera pas et ce qu'il ne décide jamais
+│   ├── STATUS.md                                ce qui existe, ce qui manque et ce qui reste ouvert
 │   └── structure.json                           données de l'image de Structure
 ├── tools/                                       contrôle de la CI et du README et outils d'images
 ├── images/                                      bannière et images d'Architecture et de Structure du dépôt
@@ -130,13 +144,14 @@ EH3D-GERBERVIEWER/
 ├── Cargo.toml Cargo.lock                        le workspace et ses dépendances verrouillées
 ├── rust-toolchain.toml                          la toolchain Rust épinglée
 ├── CHANGELOG.md                                 ce qui a changé dans chaque version
+├── AGENTS.md                                    les règles pour qui modifie le dépôt
 ├── SECURITY.md SUPPORT.md                       signaler une vulnérabilité et poser des questions
 └── CONTRIBUTING.md CODE_OF_CONDUCT.md LICENSE   contribuer, code de conduite et licence
 ```
 
 ## ⚙️ Configuration
 
-Il n'y a pas encore de fichier de configuration : ce que la personne choisit est donné en arguments de la ligne de commande (voir Interfaces) et chaque valeur par défaut est écrite dans l'aide de la commande (`eh3d-gerberview help`). Les limites fixes sont des constantes nommées dans le code, couvertes par des tests.
+Les valeurs que la personne règle vivent dans un fichier de configuration de lignes `clé = valeur` (`examples/gerberview.cfg` liste chaque clé avec sa valeur par défaut et sa plage) : la tolérance d'accrochage de la règle, l'unité d'une mesure, les opacités des couches et les limites de couches et de paires comparées. Les commandes `ruler` et `gap` le lisent avec `--config FICHIER` ; une valeur hors de sa plage, une clé inconnue ou une clé écrite deux fois est une erreur qui nomme sa ligne. Le reste est donné en arguments de la ligne de commande (voir Interfaces) et chaque valeur par défaut est écrite dans l'aide de la commande (`eh3d-gerberview help`). Les limites fixes sont des constantes nommées dans le code, couvertes par des tests.
 
 ## 🚀 Démarrage rapide
 
@@ -154,7 +169,7 @@ Pour prendre une capture de la fenêtre sans l'ouvrir à la main, lancez-la avec
 
 ## 🧪 Tests
 
-La suite compte 147 tests (`cargo test`, exécutés sous Windows et Linux dans le CI). Ils vérifient les cas normaux, les cas limites et les entrées abîmées : fichiers vides, bruit et fichiers coupés ne font jamais paniquer. Le CI exécute aussi `cargo fmt --check`, `cargo clippy` avec les avertissements comme erreurs et `python -I tools/ci_validate.py`.
+La suite compte 185 tests (`cargo test`, exécutés sous Windows et Linux dans le CI). Ils vérifient les cas normaux, les cas limites et les entrées abîmées : fichiers vides, bruit et fichiers coupés ne font jamais paniquer. Le CI exécute aussi `cargo fmt --check`, `cargo clippy` avec les avertissements comme erreurs et `python -I tools/ci_validate.py`.
 
 ## 🏗️ Compilation et publication
 
@@ -180,12 +195,16 @@ EH3D-GERBERVIEWER/
 │   ├── browse.rs                                la liste des fichiers de la fenêtre d'ouverture d'un fichier
 │   ├── cli_args.rs                              les arguments de la ligne de commande, le même fichier dans chaque petit utilitaire
 │   ├── draw.rs                                  ce que dessine la fenêtre : les formes et les triangles des régions
+│   ├── gap.rs                                   l'écart exact entre deux objets de tout type, et entre deux couches
 │   ├── gui.rs                                   la fenêtre (egui, avec la fonctionnalité gui) : dessine l'état et transmet ce que fait la personne
 │   ├── lang.rs                                  les mots de la fenêtre dans les huit langues
+│   ├── layers.rs                                la pile de couches : opacité, ordre, avertissements et une image logicielle
 │   ├── lib.rs                                   la bibliothèque : ce que chaque commande utilise
 │   ├── main.rs                                  la ligne de commande
 │   ├── measure.rs                               une partie de la logique
+│   ├── ruler.rs                                 la règle : accrochage aux sommets et centres de pastille, distance et angle
 │   ├── scene.rs                                 une partie de la logique
+│   ├── settings.rs                              les réglages du fichier de configuration, chacun avec sa plage
 │   ├── shot.rs                                  le mode capture de la fenêtre (--shot) : ses arguments, lus et vérifiés sans écran
 │   ├── svg.rs                                   une partie de la logique
 │   ├── viewport.rs                              zoom et déplacement de l'image, en simples nombres
@@ -195,10 +214,15 @@ EH3D-GERBERVIEWER/
 │   ├── golden.rs                                tests de la sortie des commandes sur les fichiers d'exemple, calculée à la main
 │   ├── viewer.rs                                tests de la bibliothèque et de la ligne de commande
 │   ├── window_cli.rs                            tests qu'une compilation sans la fonctionnalité gui reste une ligne de commande
+│   ├── gap.rs                                   tests de l'écart : formules, contact, ordre et la commande
+│   ├── layers.rs                                tests de la pile : opacité d'ensemble, ordre, limites et avertissements
+│   ├── ruler.rs                                 tests de la règle : accrochage, tolérance, unités, angle et la commande
+│   ├── settings.rs                              tests du fichier de configuration : plages, lignes, limites et copies abîmées
 │   └── reqs.rs                                  tests du registre des exigences : chacune nomme un test existant et un état cohérent
 ├── examples/
 │   ├── sample.gtl                               un exemple pour essayer le programme
-│   └── sample.ncd                               un exemple pour essayer le programme
+│   ├── sample.ncd                               un exemple pour essayer le programme
+│   └── gerberview.cfg                           les réglages avec leurs valeurs par défaut, à copier et modifier
 ├── docs/
 │   ├── architecture.json                        données de l'image d'Architecture
 │   ├── NOT_YET.md                               de bonnes idées hors de cette version, avec pourquoi et quand

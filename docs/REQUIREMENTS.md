@@ -2,7 +2,7 @@
 
 This register is the single source of the state of each capability: `STATUS.md` and the README files cite it and never state a state that it does not. A state is one of `planned`, `prototype`, `implemented` and `validated`. `validated` means that a person has run the capability on a real machine and the evidence of the manifest says `bench` or `field`; nothing here is validated, because nothing of this program has been compared with a collection of real boards.
 
-The register has 29 requirements: 22 implemented, 2 prototype, 5 planned and 0 validated. By progress: 22 done, 2 partial, 3 pending and 2 blocked. High coverage is not proof of correctness, so each row says how it is checked: the test that names it, and what it shows.
+The register has 33 requirements: 27 implemented, 4 prototype, 2 planned and 0 validated. By progress: 27 done, 4 partial, 0 pending and 2 blocked. High coverage is not proof of correctness, so each row says how it is checked: the test that names it, and what it shows.
 
 ## How to read the register
 
@@ -36,7 +36,7 @@ The check is `tests/reqs.rs`: it reads this table, finds each test and fails whe
 |---|---|---|---|---|---|---|
 | GRBV-011 | The narrowest track ignores pads and is none without tracks. | implemented | done | host-test | `more::the_narrowest_track_ignores_pads_and_is_none_without_tracks` | - |
 | GRBV-012 | The smallest gap between two tracks is measured edge to edge. | implemented | done | host-test | `viewer::the_smallest_gap_between_two_tracks_is_measured_edge_to_edge` | - |
-| GRBV-013 | The clearance between pads and tracks names the closest pair; rectangles and regions are not compared. | prototype | partial | host-test | `more::the_clearance_looks_at_tracks_as_capsules_and_names_the_closest_pair` | Rectangular pads and regions are not compared when gaps are measured. |
+| GRBV-013 | The clearance between pads and tracks names the closest pair; rectangles and regions are not compared. | prototype | partial | host-test | `more::the_clearance_looks_at_tracks_as_capsules_and_names_the_closest_pair` | `measure` compares round pads and tracks only; `gap` and `scene_gap` compare every kind of shape. |
 | GRBV-014 | Too many shapes to compare pair by pair is an error that says how many, not a hang. | implemented | done | host-test | `viewer::too_many_shapes_to_compare_pair_by_pair_is_an_error_that_says_how_many` | - |
 | GRBV-015 | Layers that do not line up are reported, and a centre off by exactly the tolerance is fine. | implemented | done | host-test | `viewer::a_centre_off_by_exactly_the_tolerance_is_fine_and_a_hair_more_is_reported_with_its_signs` | - |
 | GRBV-016 | Only the centres of the layers are compared, so a solder mask bigger than the copper lines up. | implemented | done | host-test | `more::layers_with_the_same_centre_and_other_sizes_line_up_because_only_the_centre_is_compared` | - |
@@ -58,8 +58,17 @@ The check is `tests/reqs.rs`: it reads this table, finds each test and fails whe
 
 | ID | Requirement | State | Progress | Evidence | Test | Limits |
 |---|---|---|---|---|---|---|
-| GRBV-025 | A measure is made by clicking on the picture and names the pads and tracks it measured. | planned | pending | none | `planned:window_measure::a_click_measures_and_names_the_pads_and_tracks` | The window does not highlight them yet. |
-| GRBV-026 | A layer is drawn with its opacity as a whole. | planned | pending | none | `planned:opacity::the_opacity_of_a_layer_does_not_add_up_where_its_shapes_overlap` | Shapes of one layer are drawn one over the other. |
-| GRBV-027 | The gap between rectangular pads and regions is measured. | planned | pending | none | `planned:clearance_polygons::the_gap_between_rectangles_and_regions_is_measured` | Only round pads and tracks are compared today. |
+| GRBV-025 | A measure is made by clicking on the picture and names the pads and tracks it measured. | prototype | partial | host-test | `ruler::the_ruler_snaps_both_ends_and_names_the_pads_it_measured` | The logic of the click is written and tested; the window does not take the click yet and does not highlight the pads. |
+| GRBV-026 | A layer is drawn with its opacity as a whole. | prototype | partial | host-test | `layers::the_opacity_of_a_layer_does_not_add_up_where_its_shapes_overlap` | The SVG picture and a software picture of a stack paint a layer as a whole; the window still paints shape by shape. |
+| GRBV-027 | The gap between rectangular pads, obround pads, tracks and regions is measured exactly, and it is 0 when they touch. | implemented | done | host-test | `gap::two_rectangles_are_apart_by_the_distance_of_their_sides_or_corners` | - |
 | GRBV-028 | A collection of real boards is drawn and measured and the numbers are compared with another viewer. | planned | blocked | none | `planned:real_boards::real_boards_are_drawn_and_measured_as_another_viewer_does` | Needs real boards from a person. |
 | GRBV-029 | The window is looked at on a screen and matches the picture the program takes of itself. | planned | blocked | none | `planned:window_screen::the_window_matches_the_reference_picture` | Needs a person at a screen. |
+
+## Click, layers and settings
+
+| ID | Requirement | State | Progress | Evidence | Test | Limits |
+|---|---|---|---|---|---|---|
+| GRBV-030 | The ruler gives the distance, the two differences and the angle in millimetres, inches or mils, and the angle runs from 0 to 360. | implemented | done | host-test | `ruler::the_angle_runs_from_0_to_360_anticlockwise_and_is_0_for_the_same_point` | - |
+| GRBV-031 | A click is caught by the nearest vertex or pad centre within the tolerance, and a distance equal to the tolerance catches. | implemented | done | host-test | `ruler::a_click_at_exactly_the_tolerance_is_caught_and_a_hair_more_is_not` | - |
+| GRBV-032 | A stack of layers keeps an opacity from 0 to 1 for each and an order, refuses what is outside the range and warns of a layer that is hidden or almost invisible. | implemented | done | host-test | `layers::a_composition_that_hides_a_layer_or_leaves_it_almost_invisible_is_warned` | - |
+| GRBV-033 | The settings come from a configuration file with a range for each value, and a bad value names its line. | implemented | done | host-test | `settings::a_value_out_of_its_range_an_unknown_key_or_a_twice_written_key_names_its_line` | The window does not read the file yet. |

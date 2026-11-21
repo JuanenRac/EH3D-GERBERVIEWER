@@ -6,12 +6,12 @@ EH3D-GERBERVIEWER is a working program on a computer: a library (`eh3d_gerbervie
 
 ## Capabilities
 
-The official state of each capability is in `REQUIREMENTS.md`. The register has 29 requirements: 22 implemented, 2 prototype, 5 planned and 0 validated. By progress: 22 done, 2 partial, 3 pending and 2 blocked. This page never states a state that `REQUIREMENTS.md` does not.
+The official state of each capability is in `REQUIREMENTS.md`. The register has 33 requirements: 27 implemented, 4 prototype, 2 planned and 0 validated. By progress: 27 done, 4 partial, 0 pending and 2 blocked. This page never states a state that `REQUIREMENTS.md` does not.
 
 ## Open questions
 
-* How the opacity of a layer should be drawn so that it does not add up where its shapes overlap.
-* Whether the measures should be made by clicking on the picture, naming the pads and tracks in the drawing.
+* How the window should paint a layer as a whole (the stack and its software picture exist; the window still paints shape by shape).
+* How the window should take the click of the ruler and highlight the pads and tracks it names (the logic exists).
 * Which of the shapes that are listed today as not drawn exactly should be drawn first.
 
 ## What it needs from other repositories
@@ -21,7 +21,7 @@ The official state of each capability is in `REQUIREMENTS.md`. The register has 
 
 ## Known technical debt and omitted tests
 
-* The gap between rectangular pads and regions is not measured.
-* The window draws the overlapping shapes of one layer one over the other, so the opacity adds up where they meet.
+* The command `measure` still compares only round pads and tracks; the exact gap between every kind of shape is the command `gap` between two layers.
+* The window draws the overlapping shapes of one layer one over the other, so the opacity adds up where they meet, and it does not read the configuration file nor take the click of the ruler.
 * The drawing of the window is not covered by tests; only its logic is, and no person has looked at it on a screen.
 * Tests that need a screen or a real board are not written: the register names each as `planned:` with the test that will show it.

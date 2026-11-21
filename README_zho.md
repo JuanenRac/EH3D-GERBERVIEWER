@@ -17,7 +17,7 @@
 
 ---
 
-**诚实检查 - 当前真正能运行的内容：** 一个 Rust 库和一个命令行程序（`eh3d-gerberview`），有 147 个在电脑上运行的测试：把 Gerber 层和钻孔文件绘制成 SVG 图，测量走线和间距，并检查各层是否对齐。它有一个窗口（用 `--features gui` 构建），可把各层叠加显示并缩放和平移，但窗口尚未在屏幕上看过，没有在机器上试过，也没有用大量真实文件验证过。
+**诚实检查 - 当前真正能运行的内容：** 一个 Rust 库和一个命令行程序（`eh3d-gerberview`），有 185 个在电脑上运行的测试：把 Gerber 层和钻孔文件绘制成 SVG 图，测量走线和间距，并检查各层是否对齐。它有一个窗口（用 `--features gui` 构建），可把各层叠加显示并缩放和平移，但窗口尚未在屏幕上看过，没有在机器上试过，也没有用大量真实文件验证过。
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | 版本 | `0.0.8` |
 | 成熟度 | 可用 |
-| 测试 | 147 |
+| 测试 | 185 |
 | 技术栈 | Rust |
 | 真实硬件 | 未试过：这里的任何内容都没有在机器上运行过 |
 
@@ -46,7 +46,7 @@
 |---|---|---|
 | 核心 | 🟡 | 把 Gerber 层和钻孔文件绘制成 SVG 图，测量走线和间距，并检查各层是否对齐；已在电脑上用正常和损坏的输入测试，未用大量真实文件验证。 |
 | 命令行 | 🟡 | `eh3d-gerberview` 运行与库相同的函数并打印结果；每个错误都以消息和非零退出码返回。 |
-| 测试 | 🟡 | 147 个测试通过（`cargo test`），包含正常情况、边界情况和损坏的输入。 |
+| 测试 | 🟡 | 185 个测试通过（`cargo test`），包含正常情况、边界情况和损坏的输入。 |
 | 安全 | 🟡 | 纯安全 Rust（`forbid(unsafe_code)`）：处理收到的文件时不会 panic，错误的值会返回带原因的错误；没有独立审查。 |
 | 窗口 | 🟠 | 已编写（egui，`--features gui`）：添加或拖入多个层和钻孔文件、显示或隐藏每一层、缩放和平移、测量、检查对齐、将图片导出为 SVG；其逻辑已测试，但尚未构建，也尚未在屏幕上看过。 |
 | 真实硬件 | 🔴 | 未试过：这里的任何内容都没有在机器上运行过。 |
@@ -93,7 +93,7 @@ EH3D-GERBERVIEWER 是 EH3D Fabrication Suite 的一个程序。它以库和命�
 
 库为 `eh3d_gerberviewer`（`use eh3d_gerberviewer::...`），命令行为 `eh3d-gerberview`。命令如下；每个命令把结果打印到标准输出，把错误以非零退出码报告到标准错误。没有网络访问。
 
-退出码遵循套件的约定：运行顺利为 0，工作失败（例如文件无法读取）为 1，命令行用法错误（未知的命令或选项，或命令所需内容缺失）为 64。
+退出码遵循套件的约定：运行顺利为 0，工作失败（例如文件无法读取）为 1，命令行用法错误（未知的命令或选项，或命令所需内容缺失）为 64。`gap --min` 在间距低于最小值时以 2 结束：检查已运行但未通过。
 
 ```text
 EH3D-GERBERVIEWER/
@@ -102,12 +102,16 @@ EH3D-GERBERVIEWER/
 │   ├── browse.rs                                打开文件窗口的文件列表
 │   ├── cli_args.rs                              命令行参数：每个小工具中的同一个文件
 │   ├── draw.rs                                  窗口绘制的内容：图形和区域的三角形
+│   ├── gap.rs                                   任意类型两个对象之间以及两个图层之间的精确间距
 │   ├── gui.rs                                   窗口（egui，gui 特性）：绘制状态并传递用户的操作
 │   ├── lang.rs                                  窗口的文字（八种语言）
+│   ├── layers.rs                                图层堆栈：不透明度、顺序、警告和软件渲染图像
 │   ├── lib.rs                                   库：每个命令所使用的部分
 │   ├── main.rs                                  命令行
 │   ├── measure.rs                               逻辑的一部分
+│   ├── ruler.rs                                 标尺：吸附到顶点和焊盘中心，距离和角度
 │   ├── scene.rs                                 逻辑的一部分
+│   ├── settings.rs                              配置文件中的设置，每项都有范围
 │   ├── shot.rs                                  窗口的截图模式（--shot）：无需屏幕即可读取和检查其参数
 │   ├── svg.rs                                   逻辑的一部分
 │   ├── viewport.rs                              图像的缩放和平移（纯数值）
@@ -116,12 +120,22 @@ EH3D-GERBERVIEWER/
 │   ├── fuzz.rs                                  固定种子的测试：损坏的文件、截断和异常数字
 │   ├── golden.rs                                示例文件上各命令输出的测试，结果为手工算出
 │   ├── viewer.rs                                库和命令行的测试
-│   └── window_cli.rs                            测试没有 gui 特性的构建仍然只是命令行
+│   ├── window_cli.rs                            测试没有 gui 特性的构建仍然只是命令行
+│   ├── gap.rs                                   间距测试：公式、接触、顺序和命令
+│   ├── layers.rs                                堆栈测试：整体不透明度、顺序、限制和警告
+│   ├── ruler.rs                                 标尺测试：吸附、容差、单位、角度和命令
+│   ├── settings.rs                              配置文件测试：范围、行号、限制和损坏的副本
+│   └── reqs.rs                                  需求登记表的测试：每项都指明存在的测试和一致的状态
 ├── examples/
 │   ├── sample.gtl                               试用的示例
-│   └── sample.ncd                               试用的示例
+│   ├── sample.ncd                               试用的示例
+│   └── gerberview.cfg                           带默认值的设置，可复制后修改
 ├── docs/
 │   ├── architecture.json                        架构图数据
+│   ├── NOT_YET.md                               本版本暂不包含的好想法及其原因和时机
+│   ├── REQUIREMENTS.md                          需求登记表：每项的状态、证据和测试
+│   ├── SCOPE.md                                 用途、不做什么以及永远不由它决定的事
+│   ├── STATUS.md                                已有的、缺少的和仍未决定的
 │   └── structure.json                           结构图数据
 ├── tools/                                       CI 和 README 检查及绘图工具
 ├── images/                                      横幅图以及架构和仓库结构图片
@@ -130,13 +144,14 @@ EH3D-GERBERVIEWER/
 ├── Cargo.toml Cargo.lock                        工作区及其锁定的依赖
 ├── rust-toolchain.toml                          固定的 Rust 工具链
 ├── CHANGELOG.md                                 每个版本的变更
+├── AGENTS.md                                    修改本仓库的人需要遵守的规则
 ├── SECURITY.md SUPPORT.md                       如何报告漏洞及在哪里提问
 └── CONTRIBUTING.md CODE_OF_CONDUCT.md LICENSE   参与贡献、行为准则和许可证
 ```
 
 ## ⚙️ 配置
 
-目前还没有配置文件：用户的选择通过命令行参数给出（见接口），每个默认值都写在命令的帮助中（`eh3d-gerberview help`）。固定的限制是代码中的具名常量，并有测试覆盖。
+用户调整的值保存在由 `键 = 值` 行组成的配置文件中（`examples/gerberview.cfg` 列出每个键及其默认值和范围）：标尺的吸附容差、测量单位、图层的不透明度，以及图层数和比较对数的上限。命令 `ruler` 和 `gap` 用 `--config 文件` 读取它；超出范围的值、未知的键或重复写的键都会报错并指出所在行。其余内容通过命令行参数给出（见接口），每个默认值都写在命令的帮助中（`eh3d-gerberview help`）。固定的限制是代码中的具名常量，并有测试覆盖。
 
 ## 🚀 快速开始
 
@@ -154,7 +169,7 @@ cargo run --release --features gui -- --shot screen.png examples/sample.gtl   # 
 
 ## 🧪 测试
 
-测试套件有 147 个测试（`cargo test`，CI 在 Windows 和 Linux 上运行）。它们检查正常情况、边界情况和损坏的输入：空文件、乱码和被截断的文件绝不会 panic。CI 还运行 `cargo fmt --check`、把警告当作错误的 `cargo clippy` 以及 `python -I tools/ci_validate.py`。
+测试套件有 185 个测试（`cargo test`，CI 在 Windows 和 Linux 上运行）。它们检查正常情况、边界情况和损坏的输入：空文件、乱码和被截断的文件绝不会 panic。CI 还运行 `cargo fmt --check`、把警告当作错误的 `cargo clippy` 以及 `python -I tools/ci_validate.py`。
 
 ## 🏗️ 构建与发布
 
@@ -180,12 +195,16 @@ EH3D-GERBERVIEWER/
 │   ├── browse.rs                                打开文件窗口的文件列表
 │   ├── cli_args.rs                              命令行参数：每个小工具中的同一个文件
 │   ├── draw.rs                                  窗口绘制的内容：图形和区域的三角形
+│   ├── gap.rs                                   任意类型两个对象之间以及两个图层之间的精确间距
 │   ├── gui.rs                                   窗口（egui，gui 特性）：绘制状态并传递用户的操作
 │   ├── lang.rs                                  窗口的文字（八种语言）
+│   ├── layers.rs                                图层堆栈：不透明度、顺序、警告和软件渲染图像
 │   ├── lib.rs                                   库：每个命令所使用的部分
 │   ├── main.rs                                  命令行
 │   ├── measure.rs                               逻辑的一部分
+│   ├── ruler.rs                                 标尺：吸附到顶点和焊盘中心，距离和角度
 │   ├── scene.rs                                 逻辑的一部分
+│   ├── settings.rs                              配置文件中的设置，每项都有范围
 │   ├── shot.rs                                  窗口的截图模式（--shot）：无需屏幕即可读取和检查其参数
 │   ├── svg.rs                                   逻辑的一部分
 │   ├── viewport.rs                              图像的缩放和平移（纯数值）
@@ -195,10 +214,15 @@ EH3D-GERBERVIEWER/
 │   ├── golden.rs                                示例文件上各命令输出的测试，结果为手工算出
 │   ├── viewer.rs                                库和命令行的测试
 │   ├── window_cli.rs                            测试没有 gui 特性的构建仍然只是命令行
+│   ├── gap.rs                                   间距测试：公式、接触、顺序和命令
+│   ├── layers.rs                                堆栈测试：整体不透明度、顺序、限制和警告
+│   ├── ruler.rs                                 标尺测试：吸附、容差、单位、角度和命令
+│   ├── settings.rs                              配置文件测试：范围、行号、限制和损坏的副本
 │   └── reqs.rs                                  需求登记表的测试：每项都指明存在的测试和一致的状态
 ├── examples/
 │   ├── sample.gtl                               试用的示例
-│   └── sample.ncd                               试用的示例
+│   ├── sample.ncd                               试用的示例
+│   └── gerberview.cfg                           带默认值的设置，可复制后修改
 ├── docs/
 │   ├── architecture.json                        架构图数据
 │   ├── NOT_YET.md                               本版本暂不包含的好想法及其原因和时机
