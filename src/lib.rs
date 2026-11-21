@@ -6,11 +6,15 @@
 pub mod align;
 pub mod browse;
 pub mod draw;
+pub mod gap;
 #[cfg(feature = "gui")]
 pub mod gui;
 pub mod lang;
+pub mod layers;
 pub mod measure;
+pub mod ruler;
 pub mod scene;
+pub mod settings;
 pub mod shot;
 pub mod svg;
 pub mod viewport;

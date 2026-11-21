@@ -5,8 +5,11 @@
 mod cli_args;
 
 use eh3d_gerberviewer::align::{compare_boxes, holes_outside};
+use eh3d_gerberviewer::gap::layer_gap;
 use eh3d_gerberviewer::measure::{min_clearance, min_track_width, pad_centres};
+use eh3d_gerberviewer::ruler::{ruler, Unit};
 use eh3d_gerberviewer::scene::{from_excellon, from_gerber_with, Scene, SceneOptions};
+use eh3d_gerberviewer::settings::Settings;
 use eh3d_gerberviewer::svg::{default_color, render, Layer};
 use std::env;
 use std::fs;
@@ -67,6 +70,8 @@ const HELP: &str = "eh3d-gerberview: a light viewer of Gerber layers and drill f
   eh3d-gerberview info LAYER...                                          size, shapes and what was not drawn
   eh3d-gerberview measure LAYER                                          narrowest track and smallest gap between pads and tracks
   eh3d-gerberview check LAYER... [--tolerance 0.5] [--exact]             do the layers line up? are the holes inside the copper?
+  eh3d-gerberview ruler LAYER X0 Y0 X1 Y1 [--unit mm|in|mil] [--snap-tolerance 0.15] [--config FILE]   distance and angle between two points, caught by the nearest vertex or pad centre
+  eh3d-gerberview gap LAYER_A LAYER_B [--min MM] [--config FILE]         smallest gap between a shape of one layer and a shape of the other (ends with 2 when it is below --min)
   eh3d-gerberview [gui] [LAYER...]                                       the window (a build with --features gui): with no arguments, or with a single layer, it opens; the commands above never open it
   eh3d-gerberview gui [FILE...] --shot OUT.png [--size WxH] [--theme forge|dark|light] [--wait N] [--lang CODE] [--replace]   a picture of the window (a build with --features gui)
 
@@ -76,6 +81,26 @@ Every command also takes --max-bytes N (the largest file read, 268435456 by defa
 arcs are followed, 0.005 by default).
 
 A LAYER is a Gerber file (.gtl .gbl .gts .gbs .gto .gbo .gtp .gbp .gko .gm1 .gbr ...) or a drill file (.drl .ncd .xln .exc).";
+
+/// Every option of a command (the options of the reading are taken before).
+const ALL_OPTIONS: [&str; 8] = [
+    "--opacity",
+    "--margin",
+    "--tolerance",
+    "--exact",
+    "--unit",
+    "--snap-tolerance",
+    "--config",
+    "--min",
+];
+
+/// The settings of the file that `--config` names, or the defaults.
+fn settings_of(args: &mut Vec<String>) -> Result<Settings, String> {
+    match cli_args::flag(args, "--config")? {
+        Some(path) => Settings::load(Path::new(&path)),
+        None => Ok(Settings::default()),
+    }
+}
 
 fn is_drill(name: &str) -> bool {
     // a name with no dot ("drl") has no extension
@@ -264,23 +289,28 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
         max_bytes: max_bytes as usize,
         arc_tolerance_mm,
     };
-    if let Some(o) = args.iter().find(|a| {
-        a.starts_with("--")
-            && !["--opacity", "--margin", "--tolerance", "--exact"].contains(&a.as_str())
-    }) {
+    if let Some(o) = args
+        .iter()
+        .find(|a| a.starts_with("--") && !ALL_OPTIONS.contains(&a.as_str()))
+    {
         return Err(format!("{o}: unknown option (see help)"));
     }
     // an option of another command is a wrong use, not a layer that cannot be read
     let takes: &[&str] = match cmd.as_str() {
         "render" => &["--opacity", "--margin", "--exact"],
         "check" => &["--tolerance", "--exact"],
+        "ruler" => &["--unit", "--snap-tolerance", "--config"],
+        "gap" => &["--min", "--config"],
         _ => &[],
     };
-    if matches!(cmd.as_str(), "render" | "info" | "measure" | "check") {
-        if let Some(o) = args.iter().find(|a| {
-            ["--opacity", "--margin", "--tolerance", "--exact"].contains(&a.as_str())
-                && !takes.contains(&a.as_str())
-        }) {
+    if matches!(
+        cmd.as_str(),
+        "render" | "info" | "measure" | "check" | "ruler" | "gap"
+    ) {
+        if let Some(o) = args
+            .iter()
+            .find(|a| ALL_OPTIONS.contains(&a.as_str()) && !takes.contains(&a.as_str()))
+        {
             return Err(format!("{cmd}: {o} is not an option of {cmd} (see help)"));
         }
     }
@@ -369,6 +399,92 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
             }
             println!("{} pads", pad_centres(&s).len());
             Ok(())
+        }
+        "ruler" => {
+            let mut settings = settings_of(&mut args)?;
+            if let Some(u) = cli_args::flag(&mut args, "--unit")? {
+                settings.unit = Unit::parse(&u)
+                    .ok_or_else(|| format!("--unit '{u}' must be from mm, in or mil"))?;
+            }
+            settings.snap_tolerance_mm =
+                flag(&mut args, "--snap-tolerance", settings.snap_tolerance_mm)?;
+            if settings.snap_tolerance_mm > 10.0 {
+                return Err(format!(
+                    "--snap-tolerance {} must be from 0 to 10 mm",
+                    settings.snap_tolerance_mm
+                ));
+            }
+            if args.len() != 5 {
+                return Err(
+                    "ruler needs a layer and four numbers (usage: ruler LAYER X0 Y0 X1 Y1)".into(),
+                );
+            }
+            let coords = args[1..]
+                .iter()
+                .map(|t| cli_args::num(t, "coordinate"))
+                .collect::<Result<Vec<_>, _>>()?;
+            let scene = load_drawable(&args[0], &opts)?;
+            let m = ruler(
+                &scene,
+                (coords[0], coords[1]),
+                (coords[2], coords[3]),
+                &settings,
+            )?;
+            for line in m.lines() {
+                println!("{line}");
+            }
+            Ok(())
+        }
+        "gap" => {
+            let settings = settings_of(&mut args)?;
+            let min = match cli_args::flag(&mut args, "--min")? {
+                Some(v) => Some(
+                    cli_args::num(&v, "--min")
+                        .ok()
+                        .filter(|n| *n >= 0.0)
+                        .ok_or_else(|| format!("--min '{v}' is not a number of zero or more"))?,
+                ),
+                None => None,
+            };
+            if args.len() != 2 {
+                return Err("gap needs two layers (usage: gap LAYER_A LAYER_B)".into());
+            }
+            let a = load_drawable(&args[0], &opts)?;
+            let b = load_drawable(&args[1], &opts)?;
+            say_notes([(args[0].as_str(), &a), (args[1].as_str(), &b)].into_iter());
+            let report = layer_gap(&a, &b, settings.max_gap_pairs)?;
+            if report.skipped > 0 {
+                eprintln!(
+                    "note: {} shapes with a number that is not valid were left out",
+                    report.skipped
+                );
+            }
+            let Some(g) = report.best else {
+                println!("one of the layers has no shape to compare");
+                return Ok(());
+            };
+            println!(
+                "smallest gap: {:.3} mm between {} {} of {} and {} {} of {}{}",
+                g.distance,
+                g.a_kind,
+                g.a_index,
+                short(&args[0]),
+                g.b_kind,
+                g.b_index,
+                short(&args[1]),
+                if g.distance == 0.0 {
+                    " (they touch or overlap)"
+                } else {
+                    ""
+                }
+            );
+            match min {
+                Some(m) if g.distance < m => Err(format!(
+                    "verification failed: the gap {:.3} mm is below the minimum {m} mm",
+                    g.distance
+                )),
+                _ => Ok(()),
+            }
         }
         "check" => {
             let tol = flag(&mut args, "--tolerance", 0.5)?;
@@ -505,6 +621,10 @@ fn main() -> ExitCode {
 
 /// The exit code of the convention of the suite for a run that ended badly: 64 when the command line was used wrongly (an unknown command, option or setting, or something it needs that is missing), 1 for a failure of the work itself.
 fn exit_code(message: &str) -> u8 {
+    // a check that ran and was not passed
+    if message.starts_with("verification failed") {
+        return 2;
+    }
     const USAGE: [&str; 8] = [
         "unknown command",
         "unknown option",

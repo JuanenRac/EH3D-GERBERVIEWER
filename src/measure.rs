@@ -60,7 +60,7 @@ fn capsule(s: &Shape) -> Option<Capsule> {
     }
 }
 
-fn segment_distance(a: ((f64, f64), (f64, f64)), b: ((f64, f64), (f64, f64))) -> f64 {
+pub(crate) fn segment_distance(a: ((f64, f64), (f64, f64)), b: ((f64, f64), (f64, f64))) -> f64 {
     fn point_segment(p: (f64, f64), s: ((f64, f64), (f64, f64))) -> f64 {
         let (dx, dy) = (s.1 .0 - s.0 .0, s.1 .1 - s.0 .1);
         let len2 = dx * dx + dy * dy;
