@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Behaviour tests at the exact edge:** `tests/behaviour.rs` adds 38 deterministic tests without changing the behaviour: the zoom and pan of the window with seeded views, the list of files and the file browser, the triangles of a region (n corners give n minus 2 triangles with the same area, the largest region that is split), the limits of each setting and of the configuration file, the stack of layers (limits, order, warnings, the picture), the gaps and their pair limit, the ruler (the exact tolerance, ties, angles, the three lines in each unit), the header of a drill file, the words of the eight languages and the command line (a picture written twice is the same file, a picture that would overwrite a layer is refused).
+
 ## [0.0.9] - Exact gap, snapping ruler, layer stack and settings file
 
 - **Requirements with identifiers and tests that name them:** `docs/REQUIREMENTS.md` is the register of what the program must do, one row for each capability with an identifier (`GRBV-001` on), its state (planned, prototype, implemented or validated), how far it is (done, partial, pending or blocked), its evidence and the test that shows it; a capability that is not written names the test that will show it. `tests/reqs.rs` reads the table and fails when a test does not exist, when a state does not agree with the progress or the evidence, when `docs/STATUS.md` does not say the same numbers, when a README does not link the documents or when a document holds a date or a private reference. The five documents of the family (`docs/SCOPE.md`, `docs/REQUIREMENTS.md`, `docs/STATUS.md`, `docs/NOT_YET.md` and `AGENTS.md`) are in the repository and are linked from the eight READMEs.
