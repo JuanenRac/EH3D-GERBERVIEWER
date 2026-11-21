@@ -17,7 +17,7 @@
 
 ---
 
-**诚实检查 - 当前真正能运行的内容：** 一个 Rust 库和一个命令行程序（`eh3d-gerberview`），有 138 个在电脑上运行的测试：把 Gerber 层和钻孔文件绘制成 SVG 图，测量走线和间距，并检查各层是否对齐。它有一个窗口（用 `--features gui` 构建），可把各层叠加显示并缩放和平移，但窗口尚未在屏幕上看过，没有在机器上试过，也没有用大量真实文件验证过。
+**诚实检查 - 当前真正能运行的内容：** 一个 Rust 库和一个命令行程序（`eh3d-gerberview`），有 147 个在电脑上运行的测试：把 Gerber 层和钻孔文件绘制成 SVG 图，测量走线和间距，并检查各层是否对齐。它有一个窗口（用 `--features gui` 构建），可把各层叠加显示并缩放和平移，但窗口尚未在屏幕上看过，没有在机器上试过，也没有用大量真实文件验证过。
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | 版本 | `0.0.8` |
 | 成熟度 | 可用 |
-| 测试 | 138 |
+| 测试 | 147 |
 | 技术栈 | Rust |
 | 真实硬件 | 未试过：这里的任何内容都没有在机器上运行过 |
 
@@ -46,7 +46,7 @@
 |---|---|---|
 | 核心 | 🟡 | 把 Gerber 层和钻孔文件绘制成 SVG 图，测量走线和间距，并检查各层是否对齐；已在电脑上用正常和损坏的输入测试，未用大量真实文件验证。 |
 | 命令行 | 🟡 | `eh3d-gerberview` 运行与库相同的函数并打印结果；每个错误都以消息和非零退出码返回。 |
-| 测试 | 🟡 | 138 个测试通过（`cargo test`），包含正常情况、边界情况和损坏的输入。 |
+| 测试 | 🟡 | 147 个测试通过（`cargo test`），包含正常情况、边界情况和损坏的输入。 |
 | 安全 | 🟡 | 纯安全 Rust（`forbid(unsafe_code)`）：处理收到的文件时不会 panic，错误的值会返回带原因的错误；没有独立审查。 |
 | 窗口 | 🟠 | 已编写（egui，`--features gui`）：添加或拖入多个层和钻孔文件、显示或隐藏每一层、缩放和平移、测量、检查对齐、将图片导出为 SVG；其逻辑已测试，但尚未构建，也尚未在屏幕上看过。 |
 | 真实硬件 | 🔴 | 未试过：这里的任何内容都没有在机器上运行过。 |
@@ -154,7 +154,7 @@ cargo run --release --features gui -- --shot screen.png examples/sample.gtl   # 
 
 ## 🧪 测试
 
-测试套件有 138 个测试（`cargo test`，CI 在 Windows 和 Linux 上运行）。它们检查正常情况、边界情况和损坏的输入：空文件、乱码和被截断的文件绝不会 panic。CI 还运行 `cargo fmt --check`、把警告当作错误的 `cargo clippy` 以及 `python -I tools/ci_validate.py`。
+测试套件有 147 个测试（`cargo test`，CI 在 Windows 和 Linux 上运行）。它们检查正常情况、边界情况和损坏的输入：空文件、乱码和被截断的文件绝不会 panic。CI 还运行 `cargo fmt --check`、把警告当作错误的 `cargo clippy` 以及 `python -I tools/ci_validate.py`。
 
 ## 🏗️ 构建与发布
 
@@ -178,6 +178,7 @@ EH3D-GERBERVIEWER/
 ├── src/
 │   ├── align.rs                                 逻辑的一部分
 │   ├── browse.rs                                打开文件窗口的文件列表
+│   ├── cli_args.rs                              命令行参数：每个小工具中的同一个文件
 │   ├── draw.rs                                  窗口绘制的内容：图形和区域的三角形
 │   ├── gui.rs                                   窗口（egui，gui 特性）：绘制状态并传递用户的操作
 │   ├── lang.rs                                  窗口的文字（八种语言）
@@ -190,14 +191,20 @@ EH3D-GERBERVIEWER/
 │   ├── viewport.rs                              图像的缩放和平移（纯数值）
 │   └── window.rs                                无需屏幕的窗口状态：层、参数、测量、检查、导出和状态
 ├── tests/
+│   ├── fuzz.rs                                  固定种子的测试：损坏的文件、截断和异常数字
 │   ├── golden.rs                                示例文件上各命令输出的测试，结果为手工算出
 │   ├── viewer.rs                                库和命令行的测试
-│   └── window_cli.rs                            测试没有 gui 特性的构建仍然只是命令行
+│   ├── window_cli.rs                            测试没有 gui 特性的构建仍然只是命令行
+│   └── reqs.rs                                  需求登记表的测试：每项都指明存在的测试和一致的状态
 ├── examples/
 │   ├── sample.gtl                               试用的示例
 │   └── sample.ncd                               试用的示例
 ├── docs/
 │   ├── architecture.json                        架构图数据
+│   ├── NOT_YET.md                               本版本暂不包含的好想法及其原因和时机
+│   ├── REQUIREMENTS.md                          需求登记表：每项的状态、证据和测试
+│   ├── SCOPE.md                                 用途、不做什么以及永远不由它决定的事
+│   ├── STATUS.md                                已有的、缺少的和仍未决定的
 │   └── structure.json                           结构图数据
 ├── tools/                                       CI 和 README 检查及绘图工具
 ├── images/                                      横幅图以及架构和仓库结构图片
@@ -206,6 +213,7 @@ EH3D-GERBERVIEWER/
 ├── Cargo.toml Cargo.lock                        工作区及其锁定的依赖
 ├── rust-toolchain.toml                          固定的 Rust 工具链
 ├── CHANGELOG.md                                 每个版本的变更
+├── AGENTS.md                                    修改本仓库的人需要遵守的规则
 ├── SECURITY.md SUPPORT.md                       如何报告漏洞及在哪里提问
 └── CONTRIBUTING.md CODE_OF_CONDUCT.md LICENSE   参与贡献、行为准则和许可证
 ```
@@ -241,6 +249,11 @@ README 和文本提供英语、西班牙语、法语、意大利语、德语、�
 ## 📚 文档
 
 * [更新日志](CHANGELOG.md)
+* [范围](docs/SCOPE.md)： 程序的用途、不做什么，以及永远不由它决定的事。
+* [需求](docs/REQUIREMENTS.md)： 功能登记表、每项的状态以及证明它的测试。
+* [状态](docs/STATUS.md)： 已有的、缺少的和仍未决定的。
+* [暂不包含](docs/NOT_YET.md)： 本版本暂不包含的好想法。
+* [修改仓库的规则](AGENTS.md)： 修改本仓库的人需要遵守的规则。
 * [架构与结构数据](docs/architecture.json)：绘制两张图所用的数据。
 
 ## 🤝 参与贡献与社区
