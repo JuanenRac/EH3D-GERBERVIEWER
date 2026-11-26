@@ -6,6 +6,7 @@
 pub mod align;
 pub mod browse;
 pub mod draw;
+pub mod eh3dfile;
 pub mod gap;
 #[cfg(feature = "gui")]
 pub mod gui;

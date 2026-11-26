@@ -17,7 +17,7 @@
 
 ---
 
-**Ehrlichkeitscheck - was heute wirklich läuft:** eine Rust-Bibliothek und ein Kommandozeilenprogramm (`eh3d-gerberview`) mit 223 Tests, die auf einem Computer laufen: zeichnet Gerber-Lagen und Bohrdateien als SVG-Bild, misst Leiterbahnen und Abstände und prüft, ob die Lagen zueinander passen. Es hat ein Fenster (Build mit `--features gui`), das die Ebenen übereinander mit Zoom und Verschieben zeigt, das aber noch auf keinem Bildschirm angesehen wurde; es wurde an keiner Maschine ausprobiert und nicht an einer Sammlung echter Dateien geprüft.
+**Ehrlichkeitscheck - was heute wirklich läuft:** eine Rust-Bibliothek und ein Kommandozeilenprogramm (`eh3d-gerberview`) mit 234 Tests, die auf einem Computer laufen: zeichnet Gerber-Lagen und Bohrdateien als SVG-Bild, misst Leiterbahnen und Abstände und prüft, ob die Lagen zueinander passen. Es hat ein Fenster (Build mit `--features gui`), das die Ebenen übereinander mit Zoom und Verschieben zeigt, das aber noch auf keinem Bildschirm angesehen wurde; es wurde an keiner Maschine ausprobiert und nicht an einer Sammlung echter Dateien geprüft.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Version | `0.0.9` |
 | Reifegrad | Funktionsfähig |
-| Tests | 223 |
+| Tests | 234 |
 | Technologie-Stack | Rust |
 | Auf echter Hardware | Nicht erprobt: nichts davon lief an einer Maschine |
 
@@ -46,7 +46,7 @@ Jede Zeile ist ein Teil dieses Repositorys, und die Ampel sagt, wie weit er heut
 |---|---|---|
 | Kern | 🟡 | zeichnet Gerber-Lagen und Bohrdateien als SVG-Bild, misst Leiterbahnen und Abstände und prüft, ob die Lagen zueinander passen; am Computer mit normalen und beschädigten Eingaben getestet, nicht mit einer Sammlung echter Dateien. |
 | Kommandozeile | 🟡 | `eh3d-gerberview` führt dieselben Funktionen wie die Bibliothek aus und gibt das Ergebnis aus; jeder Fehler kommt als Meldung mit einem Exit-Code ungleich null zurück. |
-| Tests | 🟡 | 223 Tests bestehen (`cargo test`), mit Normalfällen, Grenzfällen und beschädigten Eingaben. |
+| Tests | 🟡 | 234 Tests bestehen (`cargo test`), mit Normalfällen, Grenzfällen und beschädigten Eingaben. |
 | Sicherheit | 🟡 | Reines sicheres Rust (`forbid(unsafe_code)`): nichts gerät bei den übergebenen Dateien in Panik und ein schlechter Wert ist ein Fehler mit Begründung; keine unabhängige Prüfung. |
 | Fenster | 🟠 | Geschrieben (egui, `--features gui`): mehrere Ebenen und Bohrdateien hinzufügen oder hineinziehen, jede ein- oder ausblenden, Zoom und Verschieben, messen, die Ausrichtung prüfen, das Bild als SVG exportieren; die Logik ist getestet, aber noch nicht gebaut oder auf einem Bildschirm angesehen. |
 | Echte Hardware | 🔴 | Nicht erprobt: nichts davon wurde an einer Maschine ausgeführt. |
@@ -89,6 +89,10 @@ Wie die Teile dieses Repositorys zusammenpassen: wer es nutzt, was es enthält u
 
 **Was nicht abgesichert ist:** Ein fehlerfrei erzeugtes Ergebnis ist kein geprüftes Ergebnis. Nichts hier kennt die Grenzen einer Maschine, und das Programm hatte keine unabhängige Prüfung. Eine Schwachstelle bitte privat melden (siehe [SECURITY.md](SECURITY.md)).
 
+**Das Projekt der Suite.** Eine `.eh3d`-Datei hat einen Zweig je Programm. `project info DATEI.eh3d` zeigt den Auftrag (die Ebenen des Zweigs `manufacturing/`, ein `.eh3dproj`-Paket) und das im Projekt gespeicherte Bild, und `project render DATEI.eh3d` zeichnet die Ebenen des Auftrags und speichert das Bild im Zweig `gerberviewer/`, mit einer Kopie der verwendeten Ebenen und dem Inhalt des Zweigs, aus dem sie stammen. Kein anderer Zweig ändert sich. Ändert sich der Auftrag danach, meldet `project info`, dass das Bild veraltet ist, und endet mit 2.
+
+Im Fenster hat jede Ebene ihre eigene Deckkraft und ihren Platz im Stapel, vor einer verdeckten oder fast unsichtbaren Ebene wird gewarnt, das Lineal nimmt zwei Klicks auf der gewählten Ebene und misst vom getroffenen Pad oder Eckpunkt (mm, Zoll oder mil), eine hineingezogene `.cfg`-Datei liefert die Einstellungen, und eine hineingezogene `.eh3d`-Datei öffnet die Ebenen ihres Auftrags, damit das Bild ins Projekt gespeichert werden kann.
+
 ## 🔌 Schnittstellen
 
 Die Bibliothek ist `eh3d_gerberviewer` (`use eh3d_gerberviewer::...`); die Kommandozeile ist `eh3d-gerberview`. Die Befehle sind diese; jeder gibt sein Ergebnis auf der Standardausgabe aus und meldet einen Fehler auf der Fehlerausgabe mit einem Exit-Code ungleich null. Es gibt keinen Netzwerkzugriff.
@@ -102,6 +106,7 @@ EH3D-GERBERVIEWER/
 │   ├── browse.rs                                die Dateiliste des Fensters zum Öffnen einer Datei
 │   ├── cli_args.rs                              die Argumente der Kommandozeile, dieselbe Datei in jedem kleinen Werkzeug
 │   ├── draw.rs                                  was das Fenster zeichnet: die Formen und die Dreiecke der Flächen
+│   ├── eh3dfile.rs                              das .eh3d-Projekt: Auftrag hinein, Bild in den eigenen Zweig, Veraltetes wird gemeldet
 │   ├── gap.rs                                   der genaue Abstand zwischen zwei Objekten jeder Art und zwischen zwei Lagen
 │   ├── gui.rs                                   das Fenster (egui, mit dem Feature gui): zeichnet den Zustand und gibt weiter, was die Person tut
 │   ├── lang.rs                                  die Wörter des Fensters in den acht Sprachen
@@ -125,7 +130,8 @@ EH3D-GERBERVIEWER/
 │   ├── layers.rs                                Tests des Stapels: Deckkraft als Ganzes, Reihenfolge, Grenzen, Warnungen
 │   ├── ruler.rs                                 Tests des Lineals: Einrasten, Toleranz, Einheiten, Winkel und der Befehl
 │   ├── settings.rs                              Tests der Konfigurationsdatei: Bereiche, Zeilen, Grenzen, beschädigte Kopien
-│   └── reqs.rs                                  Tests des Anforderungsregisters: jede nennt einen vorhandenen Test und einen passenden Stand
+│   ├── reqs.rs                                  Tests des Anforderungsregisters: jede nennt einen vorhandenen Test und einen passenden Stand
+│   └── project.rs                               Tests des Projekts: Zweige, Veraltetes, Befehlszeile und Fenster
 ├── examples/
 │   ├── sample.gtl                               ein Beispiel zum Ausprobieren
 │   ├── sample.ncd                               ein Beispiel zum Ausprobieren
@@ -155,7 +161,7 @@ Die Werte, die die Person einstellt, stehen in einer Konfigurationsdatei mit Zei
 
 ## 🚀 Schnellstart
 
-Sie brauchen eine stabile Rust-Toolchain (1.75 oder neuer).
+Sie brauchen eine stabile Rust-Toolchain (1.89 oder neuer).
 
 ```bash
 cargo build --release
@@ -169,7 +175,7 @@ Um ein Bild des Fensters aufzunehmen, ohne es von Hand zu öffnen, starten Sie e
 
 ## 🧪 Tests
 
-Die Suite hat 223 Tests (`cargo test`, in der CI unter Windows und Linux). Sie prüfen Normalfälle, Grenzfälle und beschädigte Eingaben: leere Dateien, Datenmüll und abgeschnittene Dateien lösen nie eine Panik aus. Die CI führt außerdem `cargo fmt --check`, `cargo clippy` mit Warnungen als Fehlern und `python -I tools/ci_validate.py` aus.
+Die Suite hat 234 Tests (`cargo test`, in der CI unter Windows und Linux). Sie prüfen Normalfälle, Grenzfälle und beschädigte Eingaben: leere Dateien, Datenmüll und abgeschnittene Dateien lösen nie eine Panik aus. Die CI führt außerdem `cargo fmt --check`, `cargo clippy` mit Warnungen als Fehlern und `python -I tools/ci_validate.py` aus.
 
 ## 🏗️ Build und Veröffentlichung
 
@@ -195,6 +201,7 @@ EH3D-GERBERVIEWER/
 │   ├── browse.rs                                die Dateiliste des Fensters zum Öffnen einer Datei
 │   ├── cli_args.rs                              die Argumente der Kommandozeile, dieselbe Datei in jedem kleinen Werkzeug
 │   ├── draw.rs                                  was das Fenster zeichnet: die Formen und die Dreiecke der Flächen
+│   ├── eh3dfile.rs                              das .eh3d-Projekt: Auftrag hinein, Bild in den eigenen Zweig, Veraltetes wird gemeldet
 │   ├── gap.rs                                   der genaue Abstand zwischen zwei Objekten jeder Art und zwischen zwei Lagen
 │   ├── gui.rs                                   das Fenster (egui, mit dem Feature gui): zeichnet den Zustand und gibt weiter, was die Person tut
 │   ├── lang.rs                                  die Wörter des Fensters in den acht Sprachen
@@ -218,7 +225,8 @@ EH3D-GERBERVIEWER/
 │   ├── layers.rs                                Tests des Stapels: Deckkraft als Ganzes, Reihenfolge, Grenzen, Warnungen
 │   ├── ruler.rs                                 Tests des Lineals: Einrasten, Toleranz, Einheiten, Winkel und der Befehl
 │   ├── settings.rs                              Tests der Konfigurationsdatei: Bereiche, Zeilen, Grenzen, beschädigte Kopien
-│   └── reqs.rs                                  Tests des Anforderungsregisters: jede nennt einen vorhandenen Test und einen passenden Stand
+│   ├── reqs.rs                                  Tests des Anforderungsregisters: jede nennt einen vorhandenen Test und einen passenden Stand
+│   └── project.rs                               Tests des Projekts: Zweige, Veraltetes, Befehlszeile und Fenster
 ├── examples/
 │   ├── sample.gtl                               ein Beispiel zum Ausprobieren
 │   ├── sample.ncd                               ein Beispiel zum Ausprobieren

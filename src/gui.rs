@@ -3,6 +3,7 @@
 
 use crate::browse::{self, Browser};
 use crate::lang::{Lang, Msg};
+use crate::ruler::Unit;
 use crate::shot::{ShotRequest, ShotTheme, PATIENCE_FRAMES};
 use crate::window::{Report, Window, LAYER_EXTENSIONS};
 use eframe::egui::{
@@ -115,6 +116,29 @@ impl App {
                 {
                     self.fit_pending = true;
                 }
+                let has_project = self.win.project.is_some();
+                if ui
+                    .add_enabled(has_project, egui::Button::new(Msg::SaveProject.tr(lang)))
+                    .clicked()
+                {
+                    self.win.save_project();
+                }
+                ui.separator();
+                let mut ruler = self.win.ruler.on;
+                if ui.toggle_value(&mut ruler, Msg::Ruler.tr(lang)).changed() {
+                    self.win.set_ruler(ruler);
+                }
+                let mut unit = self.win.settings.unit;
+                egui::ComboBox::from_id_salt("unit")
+                    .selected_text(unit.label())
+                    .show_ui(ui, |ui| {
+                        for u in [Unit::Mm, Unit::Inch, Unit::Mil] {
+                            ui.selectable_value(&mut unit, u, u.label());
+                        }
+                    });
+                if unit != self.win.settings.unit {
+                    self.win.set_unit(unit);
+                }
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     egui::ComboBox::from_id_salt("language")
                         .selected_text(self.win.lang.name())
@@ -165,6 +189,36 @@ impl App {
                 }
                 if let Some(i) = remove {
                     self.win.remove_layer(i);
+                }
+                if let Some(i) = self.win.selected.filter(|i| *i < self.win.layers.len()) {
+                    ui.horizontal(|ui| {
+                        let below = i.checked_sub(1);
+                        let above = Some(i + 1).filter(|j| *j < self.win.layers.len());
+                        if ui
+                            .add_enabled(above.is_some(), egui::Button::new(Msg::MoveUp.tr(lang)))
+                            .clicked()
+                        {
+                            self.win.move_layer(i, i + 1);
+                        }
+                        if ui
+                            .add_enabled(below.is_some(), egui::Button::new(Msg::MoveDown.tr(lang)))
+                            .clicked()
+                        {
+                            self.win.move_layer(i, i.saturating_sub(1));
+                        }
+                    });
+                    let mut opacity = self.win.opacity_of(self.win.selected.unwrap_or(i));
+                    ui.label(Msg::LayerOpacity.tr(lang));
+                    if ui.add(egui::Slider::new(&mut opacity, 0.0..=1.0)).changed() {
+                        self.win
+                            .set_layer_opacity(self.win.selected.unwrap_or(i), opacity);
+                    }
+                }
+                for warning in self.win.stack_warnings() {
+                    ui.colored_label(DANGER, warning);
+                }
+                for line in self.win.ruler_lines() {
+                    ui.label(egui::RichText::new(line).color(ACCENT));
                 }
                 ui.add_space(8.0);
                 ui.label(
@@ -256,7 +310,19 @@ impl App {
                 self.win.fit(w, h);
                 self.fit_pending = false;
             }
-            if response.double_clicked() {
+            if self.win.ruler.on {
+                if let Some(p) = response
+                    .interact_pointer_pos()
+                    .filter(|_| response.clicked())
+                {
+                    let at = p - rect.min;
+                    let world = self
+                        .win
+                        .viewport
+                        .to_world(f64::from(at.x), f64::from(at.y), w, h);
+                    self.win.ruler_click(world);
+                }
+            } else if response.double_clicked() {
                 self.fit_pending = true;
             }
             if response.dragged() {
@@ -288,8 +354,9 @@ impl App {
         };
         let px = |mm: f64| (mm * scale) as f32;
         let painter = painter.with_clip_rect(rect);
-        let alpha = (self.win.opacity().clamp(0.0, 1.0) * 255.0).round() as u8;
+        let usual = self.win.opacity();
         for layer in self.win.layers.iter().filter(|l| l.visible) {
+            let alpha = (layer.opacity.unwrap_or(usual).clamp(0.0, 1.0) * 255.0).round() as u8;
             let (r, g, b) = layer.rgb;
             let colour = Color32::from_rgba_unmultiplied(r, g, b, alpha);
             for (shape, tris) in layer.drawing.shapes.iter().zip(&layer.drawing.tris) {
@@ -338,6 +405,18 @@ impl App {
                     }
                 }
             }
+        }
+        // the points of the ruler and the line between them
+        let ink = Stroke::new(1.5, TEXT);
+        let ends: Vec<(f64, f64)> = match &self.win.ruler.measured {
+            Some(m) => vec![m.from.point, m.to.point],
+            None => self.win.ruler.first.iter().map(|p| p.point).collect(),
+        };
+        for end in &ends {
+            painter.circle_stroke(at(end.0, end.1), 5.0, ink);
+        }
+        if let [a, b] = ends[..] {
+            painter.line_segment([at(a.0, a.1), at(b.0, b.1)], ink);
         }
     }
 
