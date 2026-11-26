@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **A picture is never written over a project:** `render OUT.svg LAYER...` with the two arguments the other way round (`render board.eh3d top.gbr`) wrote the picture over the `.eh3d` project and lost the work of every program in it; an output that ends in `.eh3d` is refused now.
+- 3 new tests: damaged and cut projects are refused by every command and left as they were, and a hostile name of a layer does not get into the markup of the picture.
+
 ## [0.1.0] - Opens the shared project of the suite and measures with layer stacks
 
 - **The reading and writing of the job of an `.eh3d` project are shared:** they are the module `eh3d_project::manufacturing` of EH3D-COMMON, the same for every manufacturing program; the commands, the window and the files of a project do not change.

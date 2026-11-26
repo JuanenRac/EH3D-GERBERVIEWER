@@ -300,3 +300,80 @@ fn a_configuration_file_dropped_on_the_window_gives_the_settings() {
     assert!(!w.load_settings(&cfg));
     assert_eq!(w.settings.unit, Unit::Mil);
 }
+
+#[test]
+fn a_picture_is_never_written_over_a_project() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = project(dir.path(), COPPER);
+    let before = std::fs::read(&path).unwrap();
+    let layer = dir.path().join("top.gbr");
+    std::fs::write(&layer, COPPER).unwrap();
+    let out = Command::new(BIN)
+        .arg("render")
+        .arg(&path)
+        .arg(&layer)
+        .output()
+        .expect("the program runs");
+    assert!(!out.status.success());
+    assert!(
+        String::from_utf8_lossy(&out.stderr).contains("project"),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert_eq!(std::fs::read(&path).unwrap(), before);
+}
+
+#[test]
+fn a_damaged_project_is_refused_by_every_command_and_left_as_it_was() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = project(dir.path(), COPPER);
+    let whole = std::fs::read(&path).unwrap();
+    for cut in [0, 1, whole.len() / 2, whole.len() - 1] {
+        std::fs::write(&path, &whole[..cut]).unwrap();
+        for what in ["info", "render"] {
+            let out = Command::new(BIN)
+                .arg("project")
+                .arg(what)
+                .arg(&path)
+                .output()
+                .expect("the program runs");
+            let code = out.status.code();
+            assert!(
+                code.is_some_and(|c| c != 0 && c != 101),
+                "{what} {cut}: {code:?}"
+            );
+        }
+        let mut w = Window::new(Lang::En);
+        assert!(!w.add_layer(&path), "{cut}");
+        assert!(w.layers.is_empty() && w.project.is_none(), "{cut}");
+        assert_eq!(std::fs::read(&path).unwrap(), whole[..cut], "{cut}");
+    }
+}
+
+#[test]
+fn a_layer_with_a_hostile_name_does_not_get_into_the_markup_of_the_picture() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = project(dir.path(), COPPER);
+    let hostile = "layers/a\"><script>&.gbr";
+    let record = br#"{"layers":[{"path":"layers/a\"><script>&.gbr","kind":"copper"}]}"#;
+    write_branch(
+        &path,
+        SOURCE_BRANCH,
+        &[("project.json", record), (hostile, COPPER.as_bytes())],
+    );
+    let out = Command::new(BIN)
+        .arg("project")
+        .arg("render")
+        .arg(&path)
+        .output()
+        .expect("the program runs");
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let svg = eh3dfile::read_result(&KIT, &path, "layers.svg").unwrap();
+    let svg = String::from_utf8(svg).unwrap();
+    assert!(!svg.contains("<script"), "{svg}");
+    assert!(svg.contains("a&quot;&gt;&lt;script&gt;&amp;.gbr"), "{svg}");
+}
