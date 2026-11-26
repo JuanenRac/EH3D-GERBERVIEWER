@@ -258,11 +258,12 @@ EH3D-GERBERVIEWER/
 
 * Das Fenster wurde noch auf keinem Bildschirm angesehen.
 * Es wurde weder an einer Maschine noch mit einer Sammlung echter Dateien erprobt und hatte keine unabhängige Prüfung.
-* Es vergleicht beim Messen von Abständen keine rechteckigen Pads oder Flächen, und das Fenster zeichnet sich überlappende Formen einer Ebene übereinander, sodass sich die Deckkraft dort addiert.
+* Der kleinste Abstand innerhalb einer Ebene (der Befehl `measure` und die Schaltfläche im Fenster, die die Ebene misst) vergleicht nur runde Pads und Leiterbahnen; rechteckige Pads und Flächen vergleicht der Befehl `gap`, zwischen zwei Ebenen.
+* Das Fenster zeichnet sich überlappende Formen einer Ebene übereinander, sodass sich die Deckkraft dort addiert.
 
 **Als Nächstes**
 
-* Das Fenster auf einem Bildschirm ansehen und vervollständigen: Messen durch Klicken im Bild, wobei die Pads und Leiterbahnen, die eine Messung nennt, hervorgehoben werden.
+* Das Fenster auf einem Bildschirm ansehen und vervollständigen: die Pads und Leiterbahnen hervorheben, die eine Messung des Lineals nennt.
 * Jede Ebene mit ihrer Deckkraft als Ganzes zeichnen, damit sie sich dort nicht addiert, wo sich Formen einer Ebene überlappen.
 * Mit echten Dateien und den anderen Programmen der Suite ausprobieren.
 

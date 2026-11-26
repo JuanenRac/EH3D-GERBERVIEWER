@@ -258,7 +258,8 @@ EH3D-GERBERVIEWER/
 
 * The window has not been looked at on a screen yet.
 * It has not been tried on a machine nor with a collection of real files, and it has had no independent review.
-* It does not compare rectangular pads or regions when it measures gaps, and the window draws the overlapping shapes of one layer one over the other, so the opacity adds up where they meet.
+* The smallest gap inside one layer (the command `measure` and the button that measures the layer in the window) compares only round pads and tracks; rectangular pads and regions are compared by the command `gap`, between two layers.
+* The window draws the overlapping shapes of one layer one over the other, so the opacity adds up where they meet.
 
 **Next**
 
