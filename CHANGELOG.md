@@ -10,6 +10,7 @@ All notable changes to this project are documented here.
 - The crate `eh3d-project` of EH3D-COMMON is now a dependency; Rust 1.89 or newer is needed.
 - **Behaviour tests at the exact edge:** `tests/behaviour.rs` adds 38 deterministic tests without changing the behaviour: the zoom and pan of the window with seeded views, the list of files and the file browser, the triangles of a region (n corners give n minus 2 triangles with the same area, the largest region that is split), the limits of each setting and of the configuration file, the stack of layers (limits, order, warnings, the picture), the gaps and their pair limit, the ruler (the exact tolerance, ties, angles, the three lines in each unit), the header of a drill file, the words of the eight languages and the command line (a picture written twice is the same file, a picture that would overwrite a layer is refused).
 - The shared workflow checker (`tools/workflow_hygiene.py`) is the current one of the documentation hub: the filters under a trigger (branches, paths, types) are no longer read as events.
+- **Built against the released shared library:** the workflows take the tag v0.3.3 of EH3D-COMMON instead of its main branch.
 
 ## [0.0.9] - Exact gap, snapping ruler, layer stack and settings file
 
