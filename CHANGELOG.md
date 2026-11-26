@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.0] - Opens the shared project of the suite and measures with layer stacks
+
 - **The reading and writing of the job of an `.eh3d` project are shared:** they are the module `eh3d_project::manufacturing` of EH3D-COMMON, the same for every manufacturing program; the commands, the window and the files of a project do not change.
 - **The project of the suite (`.eh3d`):** `project info FILE` shows the job (the branch `manufacturing/`, a `.eh3dproj` package) and what is kept in the project, and `project render FILE` draws the layers of the job and keeps the picture in the branch `gerberviewer/` only, with a copy of the layers it was made from and a reference to the content of the job; a job that changes afterwards makes the picture out of date (exit 2). The other branches keep their content. 11 new tests with invented projects.
 - **The window uses the ruler and the layer stack:** two clicks on the selected layer measure from the pad or vertex they catch (mm, inches or mils), each layer has its own opacity and can be raised or lowered, a hidden or almost invisible layer is warned, a dropped `.cfg` file gives the settings and a dropped `.eh3d` file opens its job so that the picture can be saved back. The words are in the eight languages; no person has looked at the window yet.
