@@ -2,7 +2,7 @@
 
 This register is the single source of the state of each capability: `STATUS.md` and the README files cite it and never state a state that it does not. A state is one of `planned`, `prototype`, `implemented` and `validated`. `validated` means that a person has run the capability on a real machine and the evidence of the manifest says `bench` or `field`; nothing here is validated, because nothing of this program has been compared with a collection of real boards.
 
-The register has 33 requirements: 27 implemented, 4 prototype, 2 planned and 0 validated. By progress: 27 done, 4 partial, 0 pending and 2 blocked. High coverage is not proof of correctness, so each row says how it is checked: the test that names it, and what it shows.
+The register has 37 requirements: 30 implemented, 5 prototype, 2 planned and 0 validated. By progress: 30 done, 5 partial, 0 pending and 2 blocked. High coverage is not proof of correctness, so each row says how it is checked: the test that names it, and what it shows.
 
 ## How to read the register
 
@@ -58,8 +58,8 @@ The check is `tests/reqs.rs`: it reads this table, finds each test and fails whe
 
 | ID | Requirement | State | Progress | Evidence | Test | Limits |
 |---|---|---|---|---|---|---|
-| GRBV-025 | A measure is made by clicking on the picture and names the pads and tracks it measured. | prototype | partial | host-test | `ruler::the_ruler_snaps_both_ends_and_names_the_pads_it_measured` | The logic of the click is written and tested; the window does not take the click yet and does not highlight the pads. |
-| GRBV-026 | A layer is drawn with its opacity as a whole. | prototype | partial | host-test | `layers::the_opacity_of_a_layer_does_not_add_up_where_its_shapes_overlap` | The SVG picture and a software picture of a stack paint a layer as a whole; the window still paints shape by shape. |
+| GRBV-025 | A measure is made by clicking on the picture and names the pads and tracks it measured. | prototype | partial | host-test | `ruler::the_ruler_snaps_both_ends_and_names_the_pads_it_measured` | The window takes the two clicks and draws the points and the line; it does not highlight the pads and no person has looked at it. |
+| GRBV-026 | A layer is drawn with its opacity as a whole. | prototype | partial | host-test | `layers::the_opacity_of_a_layer_does_not_add_up_where_its_shapes_overlap` | The SVG picture and a software picture of a stack paint a layer as a whole; the window gives each layer its own opacity but still paints shape by shape. |
 | GRBV-027 | The gap between rectangular pads, obround pads, tracks and regions is measured exactly, and it is 0 when they touch. | implemented | done | host-test | `gap::two_rectangles_are_apart_by_the_distance_of_their_sides_or_corners` | - |
 | GRBV-028 | A collection of real boards is drawn and measured and the numbers are compared with another viewer. | planned | blocked | none | `planned:real_boards::real_boards_are_drawn_and_measured_as_another_viewer_does` | Needs real boards from a person. |
 | GRBV-029 | The window is looked at on a screen and matches the picture the program takes of itself. | planned | blocked | none | `planned:window_screen::the_window_matches_the_reference_picture` | Needs a person at a screen. |
@@ -71,4 +71,13 @@ The check is `tests/reqs.rs`: it reads this table, finds each test and fails whe
 | GRBV-030 | The ruler gives the distance, the two differences and the angle in millimetres, inches or mils, and the angle runs from 0 to 360. | implemented | done | host-test | `ruler::the_angle_runs_from_0_to_360_anticlockwise_and_is_0_for_the_same_point` | - |
 | GRBV-031 | A click is caught by the nearest vertex or pad centre within the tolerance, and a distance equal to the tolerance catches. | implemented | done | host-test | `ruler::a_click_at_exactly_the_tolerance_is_caught_and_a_hair_more_is_not` | - |
 | GRBV-032 | A stack of layers keeps an opacity from 0 to 1 for each and an order, refuses what is outside the range and warns of a layer that is hidden or almost invisible. | implemented | done | host-test | `layers::a_composition_that_hides_a_layer_or_leaves_it_almost_invisible_is_warned` | - |
-| GRBV-033 | The settings come from a configuration file with a range for each value, and a bad value names its line. | implemented | done | host-test | `settings::a_value_out_of_its_range_an_unknown_key_or_a_twice_written_key_names_its_line` | The window does not read the file yet. |
+| GRBV-033 | The settings come from a configuration file with a range for each value, and a bad value names its line. | implemented | done | host-test | `settings::a_value_out_of_its_range_an_unknown_key_or_a_twice_written_key_names_its_line` | The window reads a configuration file that is opened or dropped on it, not one on its own. |
+
+## The project of the suite
+
+| ID | Requirement | State | Progress | Evidence | Test | Limits |
+|---|---|---|---|---|---|---|
+| GRBV-034 | The layers of the job are read from the branch `manufacturing/` of a `.eh3d` project, and a project without a job is refused with its reason. | implemented | done | host-test | `project::the_job_is_read_from_the_manufacturing_branch_by_kind` | Invented projects; no project of a real board. |
+| GRBV-035 | The picture is kept in the branch `gerberviewer/` only, and the other branches keep their content. | implemented | done | host-test | `project::the_result_goes_to_its_own_branch_and_the_other_branches_keep_their_content` | - |
+| GRBV-036 | A job that changes after the picture was made is told as out of date, and a result made from old layers is not saved over it. | implemented | done | host-test | `project::a_job_that_changes_leaves_the_result_out_of_date_until_it_is_made_again` | - |
+| GRBV-037 | The window opens the job of a project, saves its picture and says when it is out of date. | prototype | partial | host-test | `project::the_window_opens_a_project_saves_its_picture_and_says_when_it_is_out_of_date` | The logic is tested without a screen; no person has looked at the window. |

@@ -17,7 +17,7 @@
 
 ---
 
-**Honesty check - what actually runs today:** a Rust library and a command line program (`eh3d-gerberview`) with 223 tests that run on a computer: draws Gerber layers and drill files as an SVG picture, measures tracks and gaps and checks that the layers line up. It has a window (built with `--features gui`) that shows the layers one over the other with zoom and panning, but the window has not been looked at on a screen yet; it has not been tried on a machine and it has not been checked against a collection of real files.
+**Honesty check - what actually runs today:** a Rust library and a command line program (`eh3d-gerberview`) with 234 tests that run on a computer: draws Gerber layers and drill files as an SVG picture, measures tracks and gaps and checks that the layers line up. It has a window (built with `--features gui`) that shows the layers one over the other with zoom and panning, but the window has not been looked at on a screen yet; it has not been tried on a machine and it has not been checked against a collection of real files.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Version | `0.0.9` |
 | Maturity | Functional |
-| Tests | 223 |
+| Tests | 234 |
 | Stack | Rust |
 | On real hardware | Not tried: nothing here has run on a machine |
 
@@ -46,7 +46,7 @@ Each line is one part of this repository and the light says how far it is today.
 |---|---|---|
 | Core | 🟡 | draws Gerber layers and drill files as an SVG picture, measures tracks and gaps and checks that the layers line up; tested on a computer with normal and damaged input, not with a collection of real files. |
 | Command line | 🟡 | `eh3d-gerberview` runs the same functions as the library and prints the result; every error comes back as a message and a non-zero exit code. |
-| Tests | 🟡 | 223 tests pass (`cargo test`), with normal cases, edge cases and damaged input. |
+| Tests | 🟡 | 234 tests pass (`cargo test`), with normal cases, edge cases and damaged input. |
 | Security | 🟡 | Plain safe Rust (`forbid(unsafe_code)`): nothing panics on the files it is given and a bad value is an error with its reason; no independent review. |
 | Window | 🟠 | Written (egui, `--features gui`): add or drop several layers and drill files, show or hide each, zoom and pan, measure, check the alignment, export the picture as SVG; its logic is tested, but it has not been built or looked at on a screen yet. |
 | Real hardware | 🔴 | Not tried: nothing here has been run on a machine. |
@@ -89,6 +89,10 @@ How the parts of this repository fit together: who uses it, what it holds and wh
 
 **What is not defended:** a result that was produced cleanly is not a verified result. Nothing here knows the limits of a machine, and the program has had no independent review. Report a vulnerability privately (see [SECURITY.md](SECURITY.md)).
 
+**The project of the suite.** A `.eh3d` file holds one branch for each program. `project info FILE.eh3d` shows the job (the layers of the branch `manufacturing/`, which is a `.eh3dproj` package) and the picture kept in the project, and `project render FILE.eh3d` draws the layers of the job and keeps the picture in the branch `gerberviewer/`, with a copy of the layers it was made from and the content of the branch they came from. No other branch changes. When the job changes afterwards, `project info` says that the picture is out of date and ends with 2.
+
+In the window, each layer has its own opacity and a place in the stack, a layer that is hidden or almost invisible is warned, the ruler takes two clicks on the selected layer and measures from the pad or vertex it catches (mm, inches or mils), a dropped `.cfg` file gives the settings, and a dropped `.eh3d` file opens the layers of its job so that the picture can be saved back to the project.
+
 ## 🔌 Interfaces
 
 The library is `eh3d_gerberviewer` (`use eh3d_gerberviewer::...`); the command line is `eh3d-gerberview`. The commands are these; each prints its result on the standard output and reports an error on the standard error with a non-zero exit code. There is no network access.
@@ -102,6 +106,7 @@ EH3D-GERBERVIEWER/
 │   ├── browse.rs                                the list of files of the window that opens a file
 │   ├── cli_args.rs                              the arguments of the command line, the same file in every small utility
 │   ├── draw.rs                                  what the window draws: the shapes and the triangles of the regions
+│   ├── eh3dfile.rs                              the .eh3d project: the job in, the picture in its own branch, out of date told
 │   ├── gap.rs                                   the exact gap between two objects of any kind, and between two layers
 │   ├── gui.rs                                   the window (egui, with the gui feature): draws the state and passes on what the person does
 │   ├── lang.rs                                  the words of the window in the eight languages
@@ -125,7 +130,8 @@ EH3D-GERBERVIEWER/
 │   ├── layers.rs                                tests of the stack: opacity as a whole, order, limits and warnings
 │   ├── ruler.rs                                 tests of the ruler: snap, tolerance, units, angle and the command
 │   ├── settings.rs                              tests of the configuration file: ranges, lines, limits and damaged copies
-│   └── reqs.rs                                  tests of the register of requirements: each names a test that exists and a state that agrees
+│   ├── reqs.rs                                  tests of the register of requirements: each names a test that exists and a state that agrees
+│   └── project.rs                               tests of the project: branches, out of date, command line and window
 ├── examples/
 │   ├── sample.gtl                               a sample to try the program with
 │   ├── sample.ncd                               a sample to try the program with
@@ -155,7 +161,7 @@ The values that a person tunes live in a configuration file of `key = value` lin
 
 ## 🚀 Quick start
 
-You need a stable Rust toolchain (1.75 or newer).
+You need a stable Rust toolchain (1.89 or newer).
 
 ```bash
 cargo build --release
@@ -169,7 +175,7 @@ To take a picture of the window without opening it by hand, run it with `--shot 
 
 ## 🧪 Testing
 
-The suite has 223 tests (`cargo test`, run on Windows and Linux in the CI). They check the normal cases, the edge cases and damaged input: empty files, garbage and cut files never panic. The CI also runs `cargo fmt --check`, `cargo clippy` with warnings as errors and `python -I tools/ci_validate.py`.
+The suite has 234 tests (`cargo test`, run on Windows and Linux in the CI). They check the normal cases, the edge cases and damaged input: empty files, garbage and cut files never panic. The CI also runs `cargo fmt --check`, `cargo clippy` with warnings as errors and `python -I tools/ci_validate.py`.
 
 ## 🏗️ Build & Release
 
@@ -195,6 +201,7 @@ EH3D-GERBERVIEWER/
 │   ├── browse.rs                                the list of files of the window that opens a file
 │   ├── cli_args.rs                              the arguments of the command line, the same file in every small utility
 │   ├── draw.rs                                  what the window draws: the shapes and the triangles of the regions
+│   ├── eh3dfile.rs                              the .eh3d project: the job in, the picture in its own branch, out of date told
 │   ├── gap.rs                                   the exact gap between two objects of any kind, and between two layers
 │   ├── gui.rs                                   the window (egui, with the gui feature): draws the state and passes on what the person does
 │   ├── lang.rs                                  the words of the window in the eight languages
@@ -218,7 +225,8 @@ EH3D-GERBERVIEWER/
 │   ├── layers.rs                                tests of the stack: opacity as a whole, order, limits and warnings
 │   ├── ruler.rs                                 tests of the ruler: snap, tolerance, units, angle and the command
 │   ├── settings.rs                              tests of the configuration file: ranges, lines, limits and damaged copies
-│   └── reqs.rs                                  tests of the register of requirements: each names a test that exists and a state that agrees
+│   ├── reqs.rs                                  tests of the register of requirements: each names a test that exists and a state that agrees
+│   └── project.rs                               tests of the project: branches, out of date, command line and window
 ├── examples/
 │   ├── sample.gtl                               a sample to try the program with
 │   ├── sample.ncd                               a sample to try the program with
@@ -254,7 +262,7 @@ EH3D-GERBERVIEWER/
 
 **Next**
 
-* Look at the window on a screen and finish it: measuring by clicking on the picture, with the pads and tracks that a measure names highlighted.
+* Look at the window on a screen and finish it: highlight the pads and tracks that a measure of the ruler names.
 * Draw each layer with its opacity as a whole, so that it does not add up where the shapes of one layer overlap.
 * Try it with real files and with the other programs of the suite.
 

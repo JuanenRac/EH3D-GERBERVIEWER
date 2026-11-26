@@ -17,7 +17,7 @@
 
 ---
 
-**Verificação de honestidade - o que funciona hoje:** uma biblioteca Rust e um programa de linha de comandos (`eh3d-gerberview`) com 223 testes que correm num computador: desenha camadas Gerber e ficheiros de furação como imagem SVG, mede pistas e folgas e verifica se as camadas se alinham. Tem uma janela (compilada com `--features gui`) que mostra as camadas umas sobre as outras com zoom e deslocamento, mas que ainda não foi vista num ecrã; não foi experimentado numa máquina e não foi verificado com uma coleção de ficheiros reais.
+**Verificação de honestidade - o que funciona hoje:** uma biblioteca Rust e um programa de linha de comandos (`eh3d-gerberview`) com 234 testes que correm num computador: desenha camadas Gerber e ficheiros de furação como imagem SVG, mede pistas e folgas e verifica se as camadas se alinham. Tem uma janela (compilada com `--features gui`) que mostra as camadas umas sobre as outras com zoom e deslocamento, mas que ainda não foi vista num ecrã; não foi experimentado numa máquina e não foi verificado com uma coleção de ficheiros reais.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Versão | `0.0.9` |
 | Maturidade | Funcional |
-| Testes | 223 |
+| Testes | 234 |
 | Tecnologias | Rust |
 | Em hardware real | Não experimentado: nada disto correu numa máquina |
 
@@ -46,7 +46,7 @@ Cada linha é uma parte deste repositório e a luz diz até onde chega hoje. É 
 |---|---|---|
 | Núcleo | 🟡 | desenha camadas Gerber e ficheiros de furação como imagem SVG, mede pistas e folgas e verifica se as camadas se alinham; testado num computador com entradas normais e danificadas, não com uma coleção de ficheiros reais. |
 | Linha de comandos | 🟡 | `eh3d-gerberview` executa as mesmas funções da biblioteca e imprime o resultado; cada erro volta como mensagem e código de saída diferente de zero. |
-| Testes | 🟡 | 223 testes passam (`cargo test`), com casos normais, casos-limite e entradas danificadas. |
+| Testes | 🟡 | 234 testes passam (`cargo test`), com casos normais, casos-limite e entradas danificadas. |
 | Segurança | 🟡 | Rust seguro e simples (`forbid(unsafe_code)`): nada entra em pânico com os ficheiros recebidos e um valor mau é um erro com o seu motivo; sem revisão independente. |
 | Janela | 🟠 | Escrita (egui, `--features gui`): adicionar ou largar várias camadas e ficheiros de furação, mostrar ou ocultar cada uma, zoom e deslocamento, medir, verificar o alinhamento, exportar a imagem em SVG; a sua lógica está testada, mas ainda não foi compilada nem vista num ecrã. |
 | Hardware real | 🔴 | Não experimentado: nada disto foi executado numa máquina. |
@@ -89,6 +89,10 @@ Como as partes deste repositório se encaixam: quem o usa, o que contém e de qu
 
 **O que não é defendido:** um resultado produzido sem erros não é um resultado verificado. Nada aqui conhece os limites de uma máquina e o programa não teve revisão independente. Comunique uma vulnerabilidade em privado (ver [SECURITY.md](SECURITY.md)).
 
+**O projeto da suite.** Um ficheiro `.eh3d` tem um ramo por programa. `project info FICHEIRO.eh3d` mostra o trabalho (as camadas do ramo `manufacturing/`, um pacote `.eh3dproj`) e a imagem guardada no projeto, e `project render FICHEIRO.eh3d` desenha as camadas do trabalho e guarda a imagem no ramo `gerberviewer/`, com uma cópia das camadas usadas e o conteúdo do ramo de onde vêm. Nenhum outro ramo muda. Se o trabalho mudar depois, `project info` avisa que a imagem está desatualizada e termina com 2.
+
+Na janela, cada camada tem a sua opacidade e o seu lugar na pilha, uma camada tapada ou quase invisível é avisada, a régua toma dois cliques na camada escolhida e mede a partir do pad ou vértice apanhado (mm, polegadas ou mils), um ficheiro `.cfg` largado dá as definições e um `.eh3d` largado abre as camadas do seu trabalho para guardar a imagem no projeto.
+
 ## 🔌 Interfaces
 
 A biblioteca é `eh3d_gerberviewer` (`use eh3d_gerberviewer::...`); a linha de comandos é `eh3d-gerberview`. Os comandos são estes; cada um imprime o resultado na saída padrão e comunica um erro na saída de erros com um código de saída diferente de zero. Não há acesso à rede.
@@ -102,6 +106,7 @@ EH3D-GERBERVIEWER/
 │   ├── browse.rs                                a lista de ficheiros da janela que abre um ficheiro
 │   ├── cli_args.rs                              os argumentos da linha de comandos, o mesmo ficheiro em cada utilitário pequeno
 │   ├── draw.rs                                  o que a janela desenha: as formas e os triângulos das regiões
+│   ├── eh3dfile.rs                              o projeto .eh3d: entra o trabalho, a imagem fica no seu ramo e avisa se fica desatualizada
 │   ├── gap.rs                                   a separação exata entre dois objetos de qualquer tipo, e entre duas camadas
 │   ├── gui.rs                                   a janela (egui, com a funcionalidade gui): desenha o estado e transmite o que a pessoa faz
 │   ├── lang.rs                                  as palavras da janela nos oito idiomas
@@ -125,7 +130,8 @@ EH3D-GERBERVIEWER/
 │   ├── layers.rs                                testes da pilha: opacidade no todo, ordem, limites e avisos
 │   ├── ruler.rs                                 testes da régua: ajuste, tolerância, unidades, ângulo e o comando
 │   ├── settings.rs                              testes do ficheiro de configuração: intervalos, linhas, limites e cópias danificadas
-│   └── reqs.rs                                  testes do registo de requisitos: cada um nomeia um teste que existe e um estado coerente
+│   ├── reqs.rs                                  testes do registo de requisitos: cada um nomeia um teste que existe e um estado coerente
+│   └── project.rs                               testes do projeto: ramos, desatualizado, linha de comandos e janela
 ├── examples/
 │   ├── sample.gtl                               um exemplo para experimentar o programa
 │   ├── sample.ncd                               um exemplo para experimentar o programa
@@ -155,7 +161,7 @@ Os valores que a pessoa ajusta vivem num ficheiro de configuração de linhas `c
 
 ## 🚀 Início rápido
 
-Precisa de uma cadeia de ferramentas Rust estável (1.75 ou mais recente).
+Precisa de uma cadeia de ferramentas Rust estável (1.89 ou mais recente).
 
 ```bash
 cargo build --release
@@ -169,7 +175,7 @@ Para tirar uma captura da janela sem a abrir à mão, execute-o com `--shot FICH
 
 ## 🧪 Testes
 
-O conjunto tem 223 testes (`cargo test`, executados em Windows e Linux no CI). Verificam os casos normais, os casos-limite e as entradas danificadas: ficheiros vazios, lixo e ficheiros cortados nunca provocam pânico. O CI executa ainda `cargo fmt --check`, `cargo clippy` com avisos como erros e `python -I tools/ci_validate.py`.
+O conjunto tem 234 testes (`cargo test`, executados em Windows e Linux no CI). Verificam os casos normais, os casos-limite e as entradas danificadas: ficheiros vazios, lixo e ficheiros cortados nunca provocam pânico. O CI executa ainda `cargo fmt --check`, `cargo clippy` com avisos como erros e `python -I tools/ci_validate.py`.
 
 ## 🏗️ Compilação e publicação
 
@@ -195,6 +201,7 @@ EH3D-GERBERVIEWER/
 │   ├── browse.rs                                a lista de ficheiros da janela que abre um ficheiro
 │   ├── cli_args.rs                              os argumentos da linha de comandos, o mesmo ficheiro em cada utilitário pequeno
 │   ├── draw.rs                                  o que a janela desenha: as formas e os triângulos das regiões
+│   ├── eh3dfile.rs                              o projeto .eh3d: entra o trabalho, a imagem fica no seu ramo e avisa se fica desatualizada
 │   ├── gap.rs                                   a separação exata entre dois objetos de qualquer tipo, e entre duas camadas
 │   ├── gui.rs                                   a janela (egui, com a funcionalidade gui): desenha o estado e transmite o que a pessoa faz
 │   ├── lang.rs                                  as palavras da janela nos oito idiomas
@@ -218,7 +225,8 @@ EH3D-GERBERVIEWER/
 │   ├── layers.rs                                testes da pilha: opacidade no todo, ordem, limites e avisos
 │   ├── ruler.rs                                 testes da régua: ajuste, tolerância, unidades, ângulo e o comando
 │   ├── settings.rs                              testes do ficheiro de configuração: intervalos, linhas, limites e cópias danificadas
-│   └── reqs.rs                                  testes do registo de requisitos: cada um nomeia um teste que existe e um estado coerente
+│   ├── reqs.rs                                  testes do registo de requisitos: cada um nomeia um teste que existe e um estado coerente
+│   └── project.rs                               testes do projeto: ramos, desatualizado, linha de comandos e janela
 ├── examples/
 │   ├── sample.gtl                               um exemplo para experimentar o programa
 │   ├── sample.ncd                               um exemplo para experimentar o programa

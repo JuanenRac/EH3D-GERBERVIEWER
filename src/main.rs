@@ -5,12 +5,14 @@
 mod cli_args;
 
 use eh3d_gerberviewer::align::{compare_boxes, holes_outside};
+use eh3d_gerberviewer::eh3dfile;
 use eh3d_gerberviewer::gap::layer_gap;
 use eh3d_gerberviewer::measure::{min_clearance, min_track_width, pad_centres};
 use eh3d_gerberviewer::ruler::{ruler, Unit};
 use eh3d_gerberviewer::scene::{from_excellon, from_gerber_with, Scene, SceneOptions};
 use eh3d_gerberviewer::settings::Settings;
 use eh3d_gerberviewer::svg::{default_color, render, Layer};
+use eh3d_gerberviewer::window::job_layer;
 use std::env;
 use std::fs;
 use std::path::Path;
@@ -72,6 +74,8 @@ const HELP: &str = "eh3d-gerberview: a light viewer of Gerber layers and drill f
   eh3d-gerberview check LAYER... [--tolerance 0.5] [--exact]             do the layers line up? are the holes inside the copper?
   eh3d-gerberview ruler LAYER X0 Y0 X1 Y1 [--unit mm|in|mil] [--snap-tolerance 0.15] [--config FILE]   distance and angle between two points, caught by the nearest vertex or pad centre
   eh3d-gerberview gap LAYER_A LAYER_B [--min MM] [--config FILE]         smallest gap between a shape of one layer and a shape of the other (ends with 2 when it is below --min)
+  eh3d-gerberview project info FILE.eh3d                                 the job of a project, the picture kept in it and whether it is out of date (then it ends with 2)
+  eh3d-gerberview project render FILE.eh3d [--opacity 0.85] [--margin 2]   draw the layers of the job and keep the picture in the branch gerberviewer/ of the project
   eh3d-gerberview [gui] [LAYER...]                                       the window (a build with --features gui): with no arguments, or with a single layer, it opens; the commands above never open it
   eh3d-gerberview gui [FILE...] --shot OUT.png [--size WxH] [--theme forge|dark|light] [--wait N] [--lang CODE] [--replace]   a picture of the window (a build with --features gui)
 
@@ -269,6 +273,9 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
     if cmd == "gui" {
         // a build with the window never gets here (main opens it): this one is only a command line
         return Err("this build has no window: build it with --features gui".into());
+    }
+    if cmd == "project" {
+        return project(args);
     }
     let max_bytes = flag(
         &mut args,
@@ -535,6 +542,84 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
             }
         }
         other => Err(format!("{other}: unknown command (see help)")),
+    }
+}
+
+/// `project info FILE` and `project render FILE [--opacity O] [--margin MM]`: the job of a `.eh3d` project (its branch `manufacturing/`) and the picture kept in the branch
+/// `gerberviewer/`.
+fn project(mut args: Vec<String>) -> Result<(), String> {
+    const USAGE: &str = "project needs info or render and a project (usage: project info FILE.eh3d, project render FILE.eh3d [--opacity O] [--margin MM])";
+    if args.len() < 2 {
+        return Err(USAGE.into());
+    }
+    let what = args.remove(0);
+    match what.as_str() {
+        "info" => {
+            cli_args::finish(&args, 1)?;
+            let (lines, state) = eh3dfile::describe(&eh3dfile::KIT, Path::new(&args[0]))?;
+            for line in lines {
+                println!("{line}");
+            }
+            if state.out_of_date {
+                return Err(eh3dfile::out_of_date_message(&eh3dfile::KIT));
+            }
+            Ok(())
+        }
+        "render" => {
+            let opacity = flag(&mut args, "--opacity", 0.85)?;
+            if opacity > 1.0 {
+                return Err(format!("--opacity {opacity} must be from 0 to 1"));
+            }
+            let margin = flag(&mut args, "--margin", 2.0)?;
+            cli_args::finish(&args, 1)?;
+            let file = Path::new(args.first().ok_or(USAGE)?);
+            let job = eh3dfile::read_job(
+                file,
+                &[
+                    "copper",
+                    "solder_mask",
+                    "silkscreen",
+                    "paste",
+                    "outline",
+                    "drill",
+                ],
+            )?;
+            if job.is_empty() {
+                return Err("the job of the project has no layer to draw".into());
+            }
+            let lang = eh3d_gerberviewer::lang::Lang::En;
+            let arc = eh3d_gerberviewer::scene::DEFAULT_ARC_TOLERANCE_MM;
+            let mut layers = Vec::new();
+            for f in &job {
+                let view = job_layer(f, lang, arc)?;
+                let (r, g, b) = view.rgb;
+                layers.push(Layer {
+                    name: view.name,
+                    scene: view.scene,
+                    color: eh3d_gerberviewer::window::hex((r, g, b)),
+                    opacity,
+                });
+            }
+            say_notes(layers.iter().map(|l| (l.name.as_str(), &l.scene)));
+            let svg = render(&layers, margin).into_bytes();
+            let notices = eh3dfile::save_result(
+                &eh3dfile::KIT,
+                file,
+                &job,
+                &[("layers.svg".to_string(), svg)],
+            )?;
+            for notice in notices {
+                eprintln!("note: {notice}");
+            }
+            println!(
+                "{} layers drawn in the branch {} of {}",
+                layers.len(),
+                eh3dfile::KIT.branch,
+                file.display()
+            );
+            Ok(())
+        }
+        _ => Err(USAGE.into()),
     }
 }
 

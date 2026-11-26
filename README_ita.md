@@ -17,7 +17,7 @@
 
 ---
 
-**Verifica di onestà - cosa funziona oggi:** una libreria Rust e un programma a riga di comando (`eh3d-gerberview`) con 223 test eseguiti su un computer: disegna livelli Gerber e file di foratura come immagine SVG, misura piste e distanze e verifica che i livelli siano allineati. Ha una finestra (compilata con `--features gui`) che mostra i livelli uno sopra l'altro con zoom e spostamento, ma che non è ancora stata vista su uno schermo; non è stato provato su una macchina e non è stato verificato su una raccolta di file reali.
+**Verifica di onestà - cosa funziona oggi:** una libreria Rust e un programma a riga di comando (`eh3d-gerberview`) con 234 test eseguiti su un computer: disegna livelli Gerber e file di foratura come immagine SVG, misura piste e distanze e verifica che i livelli siano allineati. Ha una finestra (compilata con `--features gui`) che mostra i livelli uno sopra l'altro con zoom e spostamento, ma che non è ancora stata vista su uno schermo; non è stato provato su una macchina e non è stato verificato su una raccolta di file reali.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Versione | `0.0.9` |
 | Maturità | Funzionale |
-| Test | 223 |
+| Test | 234 |
 | Stack tecnologico | Rust |
 | Su hardware reale | Non provato: nulla di questo ha girato su una macchina |
 
@@ -46,7 +46,7 @@ Ogni riga è una parte di questo repository e il semaforo dice a che punto è og
 |---|---|---|
 | Nucleo | 🟡 | disegna livelli Gerber e file di foratura come immagine SVG, misura piste e distanze e verifica che i livelli siano allineati; provato su un computer con input normali e danneggiati, non con una raccolta di file reali. |
 | Riga di comando | 🟡 | `eh3d-gerberview` esegue le stesse funzioni della libreria e stampa il risultato; ogni errore torna come messaggio e codice di uscita diverso da zero. |
-| Test | 🟡 | 223 test passano (`cargo test`), con casi normali, casi limite e input danneggiati. |
+| Test | 🟡 | 234 test passano (`cargo test`), con casi normali, casi limite e input danneggiati. |
 | Sicurezza | 🟡 | Rust sicuro e semplice (`forbid(unsafe_code)`): nulla va in panico con i file ricevuti e un valore errato è un errore con il suo motivo; nessuna revisione indipendente. |
 | Finestra | 🟠 | Scritta (egui, `--features gui`): aggiungere o trascinare più livelli e file di foratura, mostrare o nascondere ciascuno, zoom e spostamento, misurare, controllare l'allineamento, esportare l'immagine in SVG; la sua logica è testata, ma non è ancora stata compilata né vista su uno schermo. |
 | Hardware reale | 🔴 | Non provato: nulla di questo è stato eseguito su una macchina. |
@@ -89,6 +89,10 @@ Come si incastrano le parti di questo repository: chi lo usa, cosa contiene e da
 
 **Cosa non è difeso:** un risultato prodotto senza errori non è un risultato verificato. Nulla qui conosce i limiti di una macchina e il programma non ha avuto revisione indipendente. Segnalate una vulnerabilità in privato (vedi [SECURITY.md](SECURITY.md)).
 
+**Il progetto della suite.** Un file `.eh3d` ha un ramo per ogni programma. `project info FILE.eh3d` mostra il lavoro (i livelli del ramo `manufacturing/`, un pacchetto `.eh3dproj`) e l'immagine tenuta nel progetto, e `project render FILE.eh3d` disegna i livelli del lavoro e tiene l'immagine nel ramo `gerberviewer/`, con una copia dei livelli usati e il contenuto del ramo da cui vengono. Nessun altro ramo cambia. Se poi il lavoro cambia, `project info` avvisa che l'immagine è superata e termina con 2.
+
+Nella finestra ogni livello ha la sua opacità e il suo posto nella pila, un livello coperto o quasi invisibile è segnalato, il righello prende due clic sul livello scelto e misura dal pad o vertice agganciato (mm, pollici o mil), un file `.cfg` trascinato dà le impostazioni e un `.eh3d` trascinato apre i livelli del suo lavoro per salvare l'immagine nel progetto.
+
 ## 🔌 Interfacce
 
 La libreria è `eh3d_gerberviewer` (`use eh3d_gerberviewer::...`); la riga di comando è `eh3d-gerberview`. I comandi sono questi; ciascuno stampa il risultato sull'output standard e segnala un errore sull'output di errore con un codice di uscita diverso da zero. Non c'è accesso alla rete.
@@ -102,6 +106,7 @@ EH3D-GERBERVIEWER/
 │   ├── browse.rs                                l'elenco dei file della finestra che apre un file
 │   ├── cli_args.rs                              gli argomenti della riga di comando, lo stesso file in ogni piccola utilità
 │   ├── draw.rs                                  ciò che disegna la finestra: le forme e i triangoli delle regioni
+│   ├── eh3dfile.rs                              il progetto .eh3d: entra il lavoro, l'immagine nel suo ramo, il superato è segnalato
 │   ├── gap.rs                                   la distanza esatta tra due oggetti di qualsiasi tipo e tra due livelli
 │   ├── gui.rs                                   la finestra (egui, con la funzione gui): disegna lo stato e inoltra ciò che fa la persona
 │   ├── lang.rs                                  le parole della finestra nelle otto lingue
@@ -125,7 +130,8 @@ EH3D-GERBERVIEWER/
 │   ├── layers.rs                                test della pila: opacità complessiva, ordine, limiti e avvisi
 │   ├── ruler.rs                                 test del righello: aggancio, tolleranza, unità, angolo e il comando
 │   ├── settings.rs                              test del file di configurazione: intervalli, righe, limiti e copie danneggiate
-│   └── reqs.rs                                  test del registro dei requisiti: ognuno nomina un test esistente e uno stato coerente
+│   ├── reqs.rs                                  test del registro dei requisiti: ognuno nomina un test esistente e uno stato coerente
+│   └── project.rs                               test del progetto: rami, superato, riga di comando e finestra
 ├── examples/
 │   ├── sample.gtl                               un esempio per provare il programma
 │   ├── sample.ncd                               un esempio per provare il programma
@@ -155,7 +161,7 @@ I valori che la persona regola stanno in un file di configurazione di righe `chi
 
 ## 🚀 Avvio rapido
 
-Serve una toolchain Rust stabile (1.75 o più recente).
+Serve una toolchain Rust stabile (1.89 o più recente).
 
 ```bash
 cargo build --release
@@ -169,7 +175,7 @@ Per fare un'immagine della finestra senza aprirla a mano, eseguila con `--shot F
 
 ## 🧪 Test
 
-La suite ha 223 test (`cargo test`, eseguiti su Windows e Linux nella CI). Verificano i casi normali, i casi limite e gli input danneggiati: file vuoti, spazzatura e file tagliati non causano mai un panico. La CI esegue anche `cargo fmt --check`, `cargo clippy` con gli avvisi come errori e `python -I tools/ci_validate.py`.
+La suite ha 234 test (`cargo test`, eseguiti su Windows e Linux nella CI). Verificano i casi normali, i casi limite e gli input danneggiati: file vuoti, spazzatura e file tagliati non causano mai un panico. La CI esegue anche `cargo fmt --check`, `cargo clippy` con gli avvisi come errori e `python -I tools/ci_validate.py`.
 
 ## 🏗️ Compilazione e rilascio
 
@@ -195,6 +201,7 @@ EH3D-GERBERVIEWER/
 │   ├── browse.rs                                l'elenco dei file della finestra che apre un file
 │   ├── cli_args.rs                              gli argomenti della riga di comando, lo stesso file in ogni piccola utilità
 │   ├── draw.rs                                  ciò che disegna la finestra: le forme e i triangoli delle regioni
+│   ├── eh3dfile.rs                              il progetto .eh3d: entra il lavoro, l'immagine nel suo ramo, il superato è segnalato
 │   ├── gap.rs                                   la distanza esatta tra due oggetti di qualsiasi tipo e tra due livelli
 │   ├── gui.rs                                   la finestra (egui, con la funzione gui): disegna lo stato e inoltra ciò che fa la persona
 │   ├── lang.rs                                  le parole della finestra nelle otto lingue
@@ -218,7 +225,8 @@ EH3D-GERBERVIEWER/
 │   ├── layers.rs                                test della pila: opacità complessiva, ordine, limiti e avvisi
 │   ├── ruler.rs                                 test del righello: aggancio, tolleranza, unità, angolo e il comando
 │   ├── settings.rs                              test del file di configurazione: intervalli, righe, limiti e copie danneggiate
-│   └── reqs.rs                                  test del registro dei requisiti: ognuno nomina un test esistente e uno stato coerente
+│   ├── reqs.rs                                  test del registro dei requisiti: ognuno nomina un test esistente e uno stato coerente
+│   └── project.rs                               test del progetto: rami, superato, riga di comando e finestra
 ├── examples/
 │   ├── sample.gtl                               un esempio per provare il programma
 │   ├── sample.ncd                               un esempio per provare il programma

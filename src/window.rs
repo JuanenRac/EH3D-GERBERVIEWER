@@ -4,10 +4,14 @@
 
 use crate::align::{compare_boxes, holes_outside};
 use crate::draw::Drawing;
+use crate::eh3dfile::{self, JobFile};
 use crate::lang::{fill, Lang, Msg};
+use crate::layers::{Layer as StackLayer, Stack, Warning};
 use crate::looks_like_drill;
 use crate::measure::{min_clearance, min_track_width, pad_centres};
+use crate::ruler::{measure_points, snap, Measurement, SnapKind, Snapped, Unit};
 use crate::scene::{from_excellon, from_gerber_with, Bounds, Scene, SceneOptions};
+use crate::settings::Settings;
 use crate::svg::{default_color, render, Layer as SvgLayer};
 use crate::viewport::Viewport;
 use eh3d_parser_gerber::{read_file_limited, InputError, InputLimits, ReadError, Severity};
@@ -15,9 +19,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 /// The extensions of the files the window offers to open.
-pub const LAYER_EXTENSIONS: [&str; 19] = [
+pub const LAYER_EXTENSIONS: [&str; 20] = [
     "gtl", "gbl", "gts", "gbs", "gto", "gbo", "gtp", "gbp", "gko", "gm1", "gbr", "ger", "pho",
-    "art", "drl", "ncd", "xln", "exc", "drd",
+    "art", "drl", "ncd", "xln", "exc", "drd", "eh3d",
 ];
 
 /// A parameter of the window: the sentence that names it and the text being typed.
@@ -73,6 +77,23 @@ pub enum Status {
     },
     SameFile,
     NotSvg,
+    /// The layers of the job of a project were opened.
+    ProjectOpened {
+        name: String,
+        layers: usize,
+    },
+    /// The result was kept in the branch of the viewer.
+    ProjectSaved {
+        name: String,
+    },
+    /// The project was opened and the result in it was made from an older job.
+    ProjectStale {
+        name: String,
+    },
+    NoProject,
+    SettingsLoaded {
+        name: String,
+    },
 }
 
 impl Status {
@@ -109,6 +130,14 @@ impl Status {
             }
             Status::SameFile => Msg::SameFile.tr(lang).to_string(),
             Status::NotSvg => Msg::NotSvg.tr(lang).to_string(),
+            Status::ProjectOpened { name, layers } => fill(
+                Msg::ProjectOpened.tr(lang),
+                &[name.as_str(), layers.to_string().as_str()],
+            ),
+            Status::ProjectSaved { name } => fill(Msg::ProjectSaved.tr(lang), &[name.as_str()]),
+            Status::ProjectStale { name } => fill(Msg::ProjectStale.tr(lang), &[name.as_str()]),
+            Status::NoProject => Msg::NoProject.tr(lang).to_string(),
+            Status::SettingsLoaded { name } => fill(Msg::SettingsLoaded.tr(lang), &[name.as_str()]),
         }
     }
 
@@ -116,7 +145,12 @@ impl Status {
     pub fn is_problem(&self) -> bool {
         !matches!(
             self,
-            Status::Ready | Status::Opened { .. } | Status::Exported { .. }
+            Status::Ready
+                | Status::Opened { .. }
+                | Status::Exported { .. }
+                | Status::ProjectOpened { .. }
+                | Status::ProjectSaved { .. }
+                | Status::SettingsLoaded { .. }
         )
     }
 }
@@ -126,13 +160,22 @@ impl Status {
 pub enum Report {
     Narrowest(f64),
     NoTracks,
-    Gap { gap_mm: f64, a: usize, b: usize },
+    Gap {
+        gap_mm: f64,
+        a: usize,
+        b: usize,
+    },
     FewShapes,
     Pads(usize),
     Lined,
     HolesInside,
     NothingChecked,
-    Finding { layer: String, message: String },
+    Finding {
+        layer: String,
+        message: String,
+    },
+    /// Something the project says after a save (a signature that no longer holds).
+    Notice(String),
 }
 
 impl Report {
@@ -160,12 +203,16 @@ impl Report {
                 Msg::ReportFinding.tr(lang),
                 &[layer.as_str(), message.as_str()],
             ),
+            Report::Notice(text) => text.clone(),
         }
     }
 
     /// Whether the line reports something wrong (the window shows it in another colour).
     pub fn is_problem(&self) -> bool {
-        matches!(self, Report::Finding { .. } | Report::NothingChecked)
+        matches!(
+            self,
+            Report::Finding { .. } | Report::NothingChecked | Report::Notice(_)
+        )
     }
 }
 
@@ -180,6 +227,20 @@ pub struct LayerView {
     pub drawing: Drawing,
     pub rgb: (u8, u8, u8),
     pub visible: bool,
+    /// The opacity of this layer alone; the one of the parameters when there is none.
+    pub opacity: Option<f64>,
+    /// The file of the job of a project this layer came from.
+    pub job: Option<JobFile>,
+}
+
+/// The ruler of the window: two clicks on the selected layer.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct RulerState {
+    pub on: bool,
+    pub first: Option<Snapped>,
+    pub measured: Option<Measurement>,
+    /// The layer the clicks were made on.
+    layer: Option<usize>,
 }
 
 /// The colour `#rrggbb` as three numbers; a grey for anything else.
@@ -237,8 +298,21 @@ pub fn read_layer(path: &Path, lang: Lang, arc_tolerance_mm: f64) -> Result<Laye
         ),
         other => format!("{name}: {other}"),
     })?;
-    let text = String::from_utf8_lossy(&bytes);
-    let (scene, drill, errors) = if drill_name(&name) || looks_like_drill(&text) {
+    let drill = drill_name(&name);
+    layer_from_bytes(path, name, &bytes, drill, lang, arc_tolerance_mm)
+}
+
+/// The layer drawn from the bytes of a file; `drill` says that the name or the job already tell that it is a drill file.
+pub fn layer_from_bytes(
+    path: &Path,
+    name: String,
+    bytes: &[u8],
+    drill: bool,
+    lang: Lang,
+    arc_tolerance_mm: f64,
+) -> Result<LayerView, String> {
+    let text = String::from_utf8_lossy(bytes);
+    let (scene, drill, errors) = if drill || looks_like_drill(&text) {
         let file = eh3d_parser_excellon::parse(&text);
         let errors = file
             .diagnostics
@@ -278,7 +352,54 @@ pub fn read_layer(path: &Path, lang: Lang, arc_tolerance_mm: f64) -> Result<Laye
         drawing,
         rgb,
         visible: true,
+        opacity: None,
+        job: None,
     })
+}
+
+/// The name a layer of a job is coloured by: its own when its extension says what it is, or one that says what the job says it is.
+fn colour_name<'a>(name: &'a str, kind: &str) -> &'a str {
+    let ext = name.rsplit('.').next().unwrap_or("").to_ascii_lowercase();
+    if name.contains('.') && !matches!(ext.as_str(), "gbr" | "ger" | "pho" | "art") {
+        return name;
+    }
+    match kind {
+        "copper" => "layer.gtl",
+        "solder_mask" => "layer.gts",
+        "silkscreen" => "layer.gto",
+        "paste" => "layer.gtp",
+        "outline" => "layer.gko",
+        "drill" => "layer.drl",
+        _ => name,
+    }
+}
+
+/// The layer of a file of a job.
+pub fn job_layer(file: &JobFile, lang: Lang, arc_tolerance_mm: f64) -> Result<LayerView, String> {
+    let name = file.file_name().to_string();
+    let drill = file.kind == "drill" || drill_name(&name);
+    let rgb = parse_hex(default_color(colour_name(&name, &file.kind)));
+    let mut layer = layer_from_bytes(
+        Path::new(&file.rel),
+        name,
+        &file.bytes,
+        drill,
+        lang,
+        arc_tolerance_mm,
+    )?;
+    layer.rgb = rgb;
+    layer.job = Some(file.clone());
+    Ok(layer)
+}
+
+/// A layer as the SVG picture draws it, with its own opacity or the usual one.
+fn picture(l: &LayerView, usual: f64) -> SvgLayer {
+    SvgLayer {
+        name: l.name.clone(),
+        scene: l.scene.clone(),
+        color: hex(l.rgb),
+        opacity: l.opacity.unwrap_or(usual),
+    }
 }
 
 /// The window.
@@ -291,6 +412,11 @@ pub struct Window {
     pub report: Vec<Report>,
     pub status: Status,
     pub viewport: Viewport,
+    /// The values read from a configuration file (`gerberview.cfg`).
+    pub settings: Settings,
+    /// The project whose job is open.
+    pub project: Option<PathBuf>,
+    pub ruler: RulerState,
 }
 
 impl Window {
@@ -303,6 +429,9 @@ impl Window {
             report: Vec::new(),
             status: Status::Ready,
             viewport: Viewport::default(),
+            settings: Settings::default(),
+            project: None,
+            ruler: RulerState::default(),
         }
     }
 
@@ -376,8 +505,18 @@ impl Window {
         }
     }
 
-    /// Adds a layer or a drill file. The layers that are open stay as they are when it cannot be read.
+    /// Adds a layer or a drill file. The layers that are open stay as they are when it cannot be read. A project of the suite (`.eh3d`) opens the layers of its job, and a configuration file
+    /// (`.cfg`) gives the settings.
     pub fn add_layer(&mut self, path: &Path) -> bool {
+        if eh3dfile::is_project(path) {
+            return self.open_project(path);
+        }
+        if path
+            .extension()
+            .is_some_and(|e| e.eq_ignore_ascii_case("cfg"))
+        {
+            return self.load_settings(path);
+        }
         let arc = match self.values() {
             Ok(v) => v.arc_tolerance_mm,
             Err(st) => {
@@ -397,6 +536,7 @@ impl Window {
                 self.layers.push(layer);
                 self.selected = Some(self.layers.len() - 1);
                 self.report.clear();
+                self.clear_ruler();
                 true
             }
             Err(why) => {
@@ -411,6 +551,7 @@ impl Window {
         if index < self.layers.len() {
             self.layers.remove(index);
             self.report.clear();
+            self.clear_ruler();
             let last = self.layers.len().saturating_sub(1);
             self.selected = if self.layers.is_empty() {
                 None
@@ -418,6 +559,299 @@ impl Window {
                 self.selected
                     .map(|s| if s > index { s - 1 } else { s.min(last) })
             };
+        }
+    }
+
+    /// Reads the settings of a configuration file; the opacity of the parameters takes the one of the file.
+    pub fn load_settings(&mut self, path: &Path) -> bool {
+        match Settings::load(path) {
+            Ok(settings) => {
+                if let Some(field) = self.fields.iter_mut().find(|f| f.key == "opacity") {
+                    field.text = settings.default_opacity.to_string();
+                }
+                self.settings = settings;
+                self.set_unit(self.settings.unit);
+                self.status = Status::SettingsLoaded {
+                    name: file_name(path),
+                };
+                true
+            }
+            Err(why) => {
+                self.status = Status::Failed(why);
+                false
+            }
+        }
+    }
+
+    /// Opens the layers of the job of a project (the branch `manufacturing/`) in place of the ones that are open, and says when the result kept in the project is out of date. Nothing
+    /// changes when a layer cannot be drawn.
+    pub fn open_project(&mut self, path: &Path) -> bool {
+        let arc = match self.values() {
+            Ok(v) => v.arc_tolerance_mm,
+            Err(st) => {
+                self.status = st;
+                return false;
+            }
+        };
+        let lang = self.lang;
+        let kinds = [
+            "copper",
+            "solder_mask",
+            "silkscreen",
+            "paste",
+            "outline",
+            "drill",
+        ];
+        let read = eh3dfile::read_job(path, &kinds).and_then(|job| {
+            let layers = job
+                .iter()
+                .map(|f| job_layer(f, lang, arc))
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok((layers, eh3dfile::state(&eh3dfile::KIT, path)?))
+        });
+        let name = file_name(path);
+        match read {
+            Ok((layers, _)) if layers.is_empty() => {
+                self.status = Status::Failed(fill(Msg::NothingToDraw.tr(lang), &[name.as_str()]));
+                false
+            }
+            Ok((layers, state)) => {
+                let count = layers.len();
+                self.layers = layers;
+                self.selected = Some(count - 1);
+                self.project = Some(path.to_path_buf());
+                self.report.clear();
+                self.clear_ruler();
+                self.status = if state.out_of_date {
+                    Status::ProjectStale { name }
+                } else {
+                    Status::ProjectOpened {
+                        name,
+                        layers: count,
+                    }
+                };
+                true
+            }
+            Err(why) => {
+                self.status = Status::Failed(why);
+                false
+            }
+        }
+    }
+
+    /// Keeps the picture of the shown layers of the job in the branch `gerberviewer/` of the open project, with the reference to the job it was made from.
+    pub fn save_project(&mut self) -> bool {
+        let Some(project) = self.project.clone() else {
+            self.status = Status::NoProject;
+            return false;
+        };
+        let values = match self.values() {
+            Ok(v) => v,
+            Err(st) => {
+                self.status = st;
+                return false;
+            }
+        };
+        let shown: Vec<&LayerView> = self
+            .layers
+            .iter()
+            .filter(|l| l.visible && l.job.is_some())
+            .collect();
+        if shown.is_empty() {
+            self.status = Status::NoLayer;
+            return false;
+        }
+        let inputs: Vec<JobFile> = shown.iter().filter_map(|l| l.job.clone()).collect();
+        let pictures: Vec<SvgLayer> = shown.iter().map(|l| picture(l, values.opacity)).collect();
+        let svg = render(&pictures, values.margin_mm).into_bytes();
+        match eh3dfile::save_result(
+            &eh3dfile::KIT,
+            &project,
+            &inputs,
+            &[("layers.svg".to_string(), svg)],
+        ) {
+            Ok(notices) => {
+                self.report = notices.into_iter().map(Report::Notice).collect();
+                self.status = Status::ProjectSaved {
+                    name: file_name(&project),
+                };
+                true
+            }
+            Err(why) => {
+                self.status = Status::Failed(why);
+                false
+            }
+        }
+    }
+
+    /// The opacity a layer is drawn with: its own, or the one of the parameters.
+    pub fn opacity_of(&self, index: usize) -> f64 {
+        self.layers
+            .get(index)
+            .and_then(|l| l.opacity)
+            .unwrap_or_else(|| self.opacity())
+    }
+
+    /// Gives a layer its own opacity; a value outside 0 to 1 is refused and the layer stays as it was.
+    pub fn set_layer_opacity(&mut self, index: usize, opacity: f64) -> bool {
+        match self.layers.get_mut(index) {
+            Some(layer) if opacity.is_finite() && (0.0..=1.0).contains(&opacity) => {
+                layer.opacity = Some(opacity);
+                true
+            }
+            _ => false,
+        }
+    }
+
+    /// Moves a layer to another place of the stack (0 is drawn first, under the others); the selection follows its layer.
+    pub fn move_layer(&mut self, from: usize, to: usize) -> bool {
+        let n = self.layers.len();
+        if from >= n || to >= n || from == to {
+            return false;
+        }
+        let layer = self.layers.remove(from);
+        self.layers.insert(to, layer);
+        self.selected = self.selected.map(|s| {
+            if s == from {
+                to
+            } else if from < s && s <= to {
+                s - 1
+            } else if to <= s && s < from {
+                s + 1
+            } else {
+                s
+            }
+        });
+        self.report.clear();
+        self.clear_ruler();
+        true
+    }
+
+    /// What is odd about the stack as it is drawn: a shown layer that can hardly be seen, or one that a solid layer above may hide.
+    pub fn stack_warnings(&self) -> Vec<String> {
+        let mut stack = Stack::new(&self.settings);
+        let mut bounds = Vec::new();
+        for (i, l) in self.layers.iter().enumerate() {
+            let layer = StackLayer {
+                name: l.name.clone(),
+                rgb: [l.rgb.0, l.rgb.1, l.rgb.2],
+                opacity: self.opacity_of(i),
+                visible: l.visible,
+            };
+            if stack.push(layer).is_err() {
+                break;
+            }
+            bounds.push(l.scene.bounds());
+        }
+        let name = |i: usize| self.layers.get(i).map_or("", |l| l.name.as_str());
+        stack
+            .warnings(&bounds, &self.settings)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|w| match w {
+                Warning::AlmostInvisible { layer, .. } => {
+                    fill(Msg::WarnInvisible.tr(self.lang), &[name(layer)])
+                }
+                Warning::MayBeHidden { layer, by } => {
+                    fill(Msg::WarnHidden.tr(self.lang), &[name(layer), name(by)])
+                }
+            })
+            .collect()
+    }
+
+    /// Switches the ruler on or off; a measure that was there goes.
+    pub fn set_ruler(&mut self, on: bool) {
+        self.ruler = RulerState {
+            on,
+            ..RulerState::default()
+        };
+    }
+
+    fn clear_ruler(&mut self) {
+        self.set_ruler(self.ruler.on);
+    }
+
+    /// The unit the ruler writes in; a measure that is there is written again.
+    pub fn set_unit(&mut self, unit: Unit) {
+        self.settings.unit = unit;
+        if let Some(m) = self.ruler.measured.take() {
+            self.ruler.measured = Some(measure_points(m.from, m.to, unit));
+        }
+    }
+
+    /// A click of the ruler at a point of the board in millimetres: the first one starts a measure, the second one ends it. The point is caught by the pad or vertex of the selected layer
+    /// that is within the snap tolerance. Says whether the click was taken.
+    pub fn ruler_click(&mut self, at: (f64, f64)) -> bool {
+        if !self.ruler.on {
+            return false;
+        }
+        let Some((index, layer)) = self
+            .selected
+            .and_then(|s| self.layers.get(s).map(|l| (s, l)))
+        else {
+            self.status = Status::NoLayer;
+            return false;
+        };
+        let point = match snap(&layer.scene, at, &self.settings) {
+            Ok(p) => p,
+            Err(why) => {
+                self.status = Status::Failed(why);
+                return false;
+            }
+        };
+        let open = self.ruler.measured.is_none() && self.ruler.layer == Some(index);
+        match self.ruler.first.clone() {
+            Some(from) if open => {
+                self.ruler.measured = Some(measure_points(from, point, self.settings.unit));
+            }
+            _ => {
+                self.ruler.first = Some(point);
+                self.ruler.measured = None;
+                self.ruler.layer = Some(index);
+            }
+        }
+        true
+    }
+
+    /// What the ruler says, in the language of the person; nothing while it is off.
+    pub fn ruler_lines(&self) -> Vec<String> {
+        let lang = self.lang;
+        if !self.ruler.on {
+            return Vec::new();
+        }
+        let at = |p: &Snapped| {
+            let kind = match p.kind {
+                SnapKind::Free => Msg::SnapFree,
+                SnapKind::PadCentre => Msg::SnapPad,
+                SnapKind::Vertex => Msg::SnapVertex,
+            };
+            let unit = self.settings.unit;
+            fill(
+                Msg::RulerAt.tr(lang),
+                &[
+                    format!("{:.3}", unit.from_mm(p.point.0)).as_str(),
+                    format!("{:.3}", unit.from_mm(p.point.1)).as_str(),
+                    kind.tr(lang),
+                ],
+            )
+        };
+        match (&self.ruler.first, &self.ruler.measured) {
+            (_, Some(m)) => vec![
+                at(&m.from),
+                at(&m.to),
+                fill(
+                    Msg::RulerResult.tr(lang),
+                    &[
+                        format!("{:.4}", m.distance).as_str(),
+                        m.unit.label(),
+                        format!("{:+.4}", m.dx).as_str(),
+                        format!("{:+.4}", m.dy).as_str(),
+                        format!("{:.2}", m.angle_deg).as_str(),
+                    ],
+                ),
+            ],
+            (Some(first), None) => vec![at(first), Msg::RulerSecond.tr(lang).to_string()],
+            (None, None) => vec![Msg::RulerFirst.tr(lang).to_string()],
         }
     }
 
@@ -535,12 +969,7 @@ impl Window {
             .layers
             .iter()
             .filter(|l| l.visible)
-            .map(|l| SvgLayer {
-                name: l.name.clone(),
-                scene: l.scene.clone(),
-                color: hex(l.rgb),
-                opacity: values.opacity,
-            })
+            .map(|l| picture(l, values.opacity))
             .collect();
         match fs::write(out, render(&pictures, values.margin_mm)) {
             Ok(()) => {
