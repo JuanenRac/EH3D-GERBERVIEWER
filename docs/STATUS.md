@@ -17,7 +17,7 @@ The official state of each capability is in `REQUIREMENTS.md`. The register has 
 ## What it needs from other repositories
 
 * `EH3D-CORE-LIBS`: the Gerber and drill readers and the geometry crate, as a sibling folder.
-* `EH3D-COMMON`: the project container (`eh3d-project`), as a sibling folder.
+* `EH3D-COMMON`: the project container (`eh3d-project`), as a sibling folder at the tag v0.3.3 that the workflows take.
 * A collection of real boards, from a person, to check the layers against.
 
 ## Known technical debt and omitted tests
