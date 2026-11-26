@@ -258,11 +258,12 @@ EH3D-GERBERVIEWER/
 
 * A janela ainda não foi vista num ecrã.
 * Não foi experimentado numa máquina nem com uma coleção de ficheiros reais e não teve revisão independente.
-* Não compara pads retangulares nem regiões ao medir folgas, e a janela desenha as formas sobrepostas de uma camada umas sobre as outras, pelo que a opacidade se soma onde se encontram.
+* A menor folga dentro de uma camada (o comando `measure` e o botão da janela que mede a camada) compara apenas pads redondos e pistas; os pads retangulares e as regiões são comparados pelo comando `gap`, entre duas camadas.
+* A janela desenha as formas sobrepostas de uma camada umas sobre as outras, pelo que a opacidade se soma onde se encontram.
 
 **A seguir**
 
-* Ver a janela num ecrã e completá-la: medir clicando na imagem, com os pads e pistas que uma medida nomeia realçados.
+* Ver a janela num ecrã e completá-la: realçar os pads e as pistas que uma medida da régua nomeia.
 * Desenhar cada camada com a sua opacidade como um todo, para que não se some onde as formas de uma camada se sobrepõem.
 * Experimentá-lo com ficheiros reais e com os outros programas da suíte.
 

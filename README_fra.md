@@ -258,11 +258,12 @@ EH3D-GERBERVIEWER/
 
 * La fenêtre n'a pas encore été vue sur un écran.
 * Il n'a été essayé ni sur une machine ni avec une collection de fichiers réels, et n'a pas eu de revue indépendante.
-* Il ne compare pas les pastilles rectangulaires ni les régions pour mesurer les espaces, et la fenêtre dessine les formes qui se chevauchent d'une couche l'une sur l'autre : l'opacité s'additionne là où elles se rencontrent.
+* Le plus petit espace à l'intérieur d'une couche (la commande `measure` et le bouton de la fenêtre qui mesure la couche) ne compare que les pastilles rondes et les pistes ; les pastilles rectangulaires et les régions sont comparées par la commande `gap`, entre deux couches.
+* La fenêtre dessine les formes qui se chevauchent d'une couche l'une sur l'autre : l'opacité s'additionne là où elles se rencontrent.
 
 **Ensuite**
 
-* Voir la fenêtre sur un écran et la compléter : mesurer en cliquant sur l'image, avec les pastilles et pistes qu'une mesure nomme mises en évidence.
+* Voir la fenêtre sur un écran et la compléter : mettre en évidence les pastilles et les pistes qu'une mesure de la règle nomme.
 * Dessiner chaque couche avec son opacité d'un seul bloc, pour qu'elle ne s'additionne pas là où les formes d'une couche se chevauchent.
 * L'essayer avec des fichiers réels et avec les autres programmes de la suite.
 

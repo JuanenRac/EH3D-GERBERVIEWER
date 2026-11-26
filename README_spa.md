@@ -258,11 +258,12 @@ EH3D-GERBERVIEWER/
 
 * La ventana todavía no se ha visto en una pantalla.
 * No se ha probado en una máquina ni con una colección de ficheros reales y no ha tenido revisión independiente.
-* No compara pads rectangulares ni regiones al medir huecos, y la ventana dibuja las formas de una capa que se solapan una sobre otra, así que la opacidad se suma donde se encuentran.
+* El menor hueco dentro de una capa (la orden `measure` y el botón de la ventana que mide la capa) solo compara pads redondos y pistas; los pads rectangulares y las regiones los compara la orden `gap`, entre dos capas.
+* La ventana dibuja las formas de una capa que se solapan una sobre otra, así que la opacidad se suma donde se encuentran.
 
 **Siguiente**
 
-* Ver la ventana en una pantalla y completarla: medir pulsando sobre la imagen, con los pads y pistas que nombra una medida resaltados.
+* Ver la ventana en una pantalla y completarla: resaltar los pads y las pistas que nombra una medida de la regla.
 * Dibujar cada capa con su opacidad como un todo, para que no se sume donde se solapan las formas de una capa.
 * Probarlo con ficheros reales y con los demás programas de la suite.
 

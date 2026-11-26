@@ -258,11 +258,12 @@ EH3D-GERBERVIEWER/
 
 * La finestra non è ancora stata vista su uno schermo.
 * Non è stato provato su una macchina né con una raccolta di file reali e non ha avuto revisione indipendente.
-* Non confronta pad rettangolari o regioni nella misura degli spazi, e la finestra disegna le forme sovrapposte di un livello una sopra l'altra, quindi l'opacità si somma dove si incontrano.
+* Lo spazio minimo all'interno di un livello (il comando `measure` e il pulsante della finestra che misura il livello) confronta solo pad rotondi e piste; i pad rettangolari e le regioni li confronta il comando `gap`, tra due livelli.
+* La finestra disegna le forme sovrapposte di un livello una sopra l'altra, quindi l'opacità si somma dove si incontrano.
 
 **Prossimi passi**
 
-* Vedere la finestra su uno schermo e completarla: misurare facendo clic sull'immagine, con i pad e le piste che una misura nomina evidenziati.
+* Vedere la finestra su uno schermo e completarla: evidenziare i pad e le piste che una misura del righello nomina.
 * Disegnare ogni livello con la sua opacità come un tutto, così che non si sommi dove le forme di un livello si sovrappongono.
 * Provarlo con file reali e con gli altri programmi della suite.
 
