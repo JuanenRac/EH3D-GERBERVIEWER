@@ -339,6 +339,15 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
                     "render: {out} looks like a layer, not a picture; the output file comes first (render OUT.svg LAYER...)"
                 ));
             }
+            // a project holds the work of other programs: a picture is never written over it
+            if Path::new(&out)
+                .extension()
+                .is_some_and(|e| e.eq_ignore_ascii_case("eh3d"))
+            {
+                return Err(format!(
+                    "render: {out} is a project (.eh3d), not a picture; `project render` keeps a picture inside it"
+                ));
+            }
             let layers = args
                 .iter()
                 .map(|p| {
