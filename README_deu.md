@@ -17,7 +17,7 @@
 
 ---
 
-**Ehrlichkeitscheck - was heute wirklich läuft:** eine Rust-Bibliothek und ein Kommandozeilenprogramm (`eh3d-gerberview`) mit 243 Tests, die auf einem Computer laufen: zeichnet Gerber-Lagen und Bohrdateien als SVG-Bild, misst Leiterbahnen und Abstände und prüft, ob die Lagen zueinander passen. Es hat ein Fenster (Build mit `--features gui`), das die Ebenen übereinander mit Zoom und Verschieben zeigt, das aber noch auf keinem Bildschirm angesehen wurde; es wurde an keiner Maschine ausprobiert und nicht an einer Sammlung echter Dateien geprüft.
+**Ehrlichkeitscheck - was heute wirklich läuft:** eine Rust-Bibliothek und ein Kommandozeilenprogramm (`eh3d-gerberview`) mit 244 Tests, die auf einem Computer laufen: zeichnet Gerber-Lagen und Bohrdateien als SVG-Bild, misst Leiterbahnen und Abstände und prüft, ob die Lagen zueinander passen. Es hat ein Fenster (Build mit `--features gui`), das die Ebenen übereinander mit Zoom und Verschieben zeigt, das aber noch auf keinem Bildschirm angesehen wurde; es wurde an keiner Maschine ausprobiert und nicht an einer Sammlung echter Dateien geprüft.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Version | `0.1.1` |
 | Reifegrad | Funktionsfähig |
-| Tests | 243 |
+| Tests | 244 |
 | Technologie-Stack | Rust |
 | Auf echter Hardware | Nicht erprobt: nichts davon lief an einer Maschine |
 
@@ -46,7 +46,7 @@ Jede Zeile ist ein Teil dieses Repositorys, und die Ampel sagt, wie weit er heut
 |---|---|---|
 | Kern | 🟡 | zeichnet Gerber-Lagen und Bohrdateien als SVG-Bild, misst Leiterbahnen und Abstände und prüft, ob die Lagen zueinander passen; am Computer mit normalen und beschädigten Eingaben getestet, nicht mit einer Sammlung echter Dateien. |
 | Kommandozeile | 🟡 | `eh3d-gerberview` führt dieselben Funktionen wie die Bibliothek aus und gibt das Ergebnis aus; jeder Fehler kommt als Meldung mit einem Exit-Code ungleich null zurück. |
-| Tests | 🟡 | 243 Tests bestehen (`cargo test`), mit Normalfällen, Grenzfällen und beschädigten Eingaben. |
+| Tests | 🟡 | 244 Tests bestehen (`cargo test`), mit Normalfällen, Grenzfällen und beschädigten Eingaben. |
 | Sicherheit | 🟡 | Reines sicheres Rust (`forbid(unsafe_code)`): nichts gerät bei den übergebenen Dateien in Panik und ein schlechter Wert ist ein Fehler mit Begründung; keine unabhängige Prüfung. |
 | Fenster | 🟠 | Geschrieben (egui, `--features gui`): mehrere Ebenen und Bohrdateien hinzufügen oder hineinziehen, jede ein- oder ausblenden, Zoom und Verschieben, messen, die Ausrichtung prüfen, das Bild als SVG exportieren; die Logik ist getestet, aber noch nicht gebaut oder auf einem Bildschirm angesehen. |
 | Echte Hardware | 🔴 | Nicht erprobt: nichts davon wurde an einer Maschine ausgeführt. |
@@ -57,7 +57,7 @@ Jede Zeile ist ein Teil dieses Repositorys, und die Ampel sagt, wie weit er heut
 * **Die Formen** (`src/scene.rs`, `eh3d-geometry`): Pads (rund, rechteckig, oval), Leiterbahnen mit Breite, Flächen und Bögen, alles in Millimetern, egal in welchen Einheiten die Datei steht; die Löcher einer Bohrdatei werden zu Scheiben im Durchmesser ihres Werkzeugs. Was sich nicht exakt zeichnen lässt (Clear-Polarität, Step and Repeat, Makros), wird je einmal aufgelistet. Eine mit rechteckiger Blende gezeichnete Leiterbahn ist das überstrichene Rechteck (Strecke und Blende, ein Polygon), keine Linie mit runden Enden.
 * **Das Bild** (`src/svg.rs`): Jede Lage ist eine Gruppe mit eigener Farbe (nach der Dateiendung) und Transparenz, die Platine von oben mit y nach oben; eine leere Lagenliste ergibt ein kleines leeres Bild, Namen und Farben werden maskiert und geprüft.
 * **Messungen und Prüfungen** (`src/measure.rs`, `src/align.rs`): die schmalste Leiterbahn, der Abstand zweier Pads, der kleinste Abstand zwischen runden Pads und Bahnen (Rand zu Rand, 0 bei Berührung), Lagen mit verschobener Mitte und Löcher außerhalb des Kupfers. `check` sagt, wenn es keine Lagen zu vergleichen gibt, statt zu behaupten, dass sie übereinanderliegen, und `measure` nimmt genau eine Lage. Jeder Befehl nimmt außerdem `--max-bytes N` (eine größere Datei wird vor dem Lesen abgelehnt, mit der Meldung in der Sprache des Systems) und `--arc-tolerance MM` (wie genau Bögen nachgezeichnet werden).
-* **Was fehlen kann, wird gesagt:** Das Fenster zeigt die Warnungen der Leser (in seiner Sprache) und was von einer Datei nicht genau gezeichnet wird, `measure`, `ruler` und `gap` schreiben es in die Fehlerausgabe, und `--exact` weist auch eine Datei ohne Endebefehl oder ohne Einheiten ab. `check` meldet Ebenen, in denen nichts zu zeichnen ist, eine Bohrdatei ohne Bohrung und ein Langloch außerhalb des Kupfers, und `gap --min` gilt nicht als bestanden, wenn in einer Ebene Kupfer fehlen kann.
+* **Was fehlen kann, wird gesagt:** Das Fenster zeigt die Warnungen der Leser (in seiner Sprache) und was von einer Datei nicht genau gezeichnet wird, `measure`, `ruler` und `gap` schreiben es in die Fehlerausgabe, und `--exact` weist auch eine Datei ohne Endebefehl oder ohne Einheiten sowie eine Datei, deren Koordinatenformat oder Nullen angenommen werden mussten, ab. `check` meldet Ebenen, in denen nichts zu zeichnen ist, eine Bohrdatei ohne Bohrung und ein Langloch außerhalb des Kupfers, und `gap --min` gilt nicht als bestanden, wenn in einer Ebene Kupfer fehlen kann.
 
 ## 🧩 Rolle in EH3D
 
@@ -176,7 +176,7 @@ Um ein Bild des Fensters aufzunehmen, ohne es von Hand zu öffnen, starten Sie e
 
 ## 🧪 Tests
 
-Die Suite hat 243 Tests (`cargo test`, in der CI unter Windows und Linux). Sie prüfen Normalfälle, Grenzfälle und beschädigte Eingaben: leere Dateien, Datenmüll und abgeschnittene Dateien lösen nie eine Panik aus. Die CI führt außerdem `cargo fmt --check`, `cargo clippy` mit Warnungen als Fehlern und `python -I tools/ci_validate.py` aus.
+Die Suite hat 244 Tests (`cargo test`, in der CI unter Windows und Linux). Sie prüfen Normalfälle, Grenzfälle und beschädigte Eingaben: leere Dateien, Datenmüll und abgeschnittene Dateien lösen nie eine Panik aus. Die CI führt außerdem `cargo fmt --check`, `cargo clippy` mit Warnungen als Fehlern und `python -I tools/ci_validate.py` aus.
 
 ## 🏗️ Build und Veröffentlichung
 

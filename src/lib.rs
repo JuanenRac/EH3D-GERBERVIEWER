@@ -22,7 +22,7 @@ pub mod viewport;
 pub mod window;
 
 /// Whether a warning of a reader means that the shapes may not be the whole board or may have another size: the file has no end command (it may be cut), declares no units
-/// (millimetres are assumed), may be in inches, or has text after its end that was ignored.
+/// (millimetres are assumed), may be in inches, has a coordinate format or a zero suppression that had to be supposed, or has text after its end that was ignored.
 pub fn doubtful(diagnostics: &[eh3d_parser_gerber::Diagnostic]) -> bool {
     use eh3d_parser_gerber::codes;
     diagnostics.iter().any(|d| {
@@ -30,6 +30,8 @@ pub fn doubtful(diagnostics: &[eh3d_parser_gerber::Diagnostic]) -> bool {
             codes::END_MISSING,
             codes::UNITS_MISSING,
             codes::UNITS_SUSPECT,
+            codes::FORMAT_ASSUMED,
+            codes::ZEROS_ASSUMED,
             codes::TEXT_AFTER_END,
         ]
         .contains(&d.code)

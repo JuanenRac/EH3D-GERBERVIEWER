@@ -17,7 +17,7 @@
 
 ---
 
-**Vérification d'honnêteté - ce qui fonctionne aujourd'hui :** une bibliothèque Rust et un programme en ligne de commande (`eh3d-gerberview`) avec 243 tests exécutés sur un ordinateur : dessine des couches Gerber et des fichiers de perçage en image SVG, mesure pistes et espaces et vérifie que les couches s'alignent. Il a une fenêtre (compilée avec `--features gui`) qui montre les couches l'une sur l'autre avec zoom et déplacement, mais qui n'a pas encore été vue sur un écran ; il n'a pas été essayé sur une machine et n'a pas été vérifié sur une collection de fichiers réels.
+**Vérification d'honnêteté - ce qui fonctionne aujourd'hui :** une bibliothèque Rust et un programme en ligne de commande (`eh3d-gerberview`) avec 244 tests exécutés sur un ordinateur : dessine des couches Gerber et des fichiers de perçage en image SVG, mesure pistes et espaces et vérifie que les couches s'alignent. Il a une fenêtre (compilée avec `--features gui`) qui montre les couches l'une sur l'autre avec zoom et déplacement, mais qui n'a pas encore été vue sur un écran ; il n'a pas été essayé sur une machine et n'a pas été vérifié sur une collection de fichiers réels.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Version | `0.1.1` |
 | Maturité | Fonctionnel |
-| Tests | 243 |
+| Tests | 244 |
 | Pile technique | Rust |
 | Sur du matériel réel | Non essayé : rien ici n'a fonctionné sur une machine |
 
@@ -46,7 +46,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 |---|---|---|
 | Cœur | 🟡 | dessine des couches Gerber et des fichiers de perçage en image SVG, mesure pistes et espaces et vérifie que les couches s'alignent ; testé sur un ordinateur avec des entrées normales et abîmées, pas avec une collection de fichiers réels. |
 | Ligne de commande | 🟡 | `eh3d-gerberview` exécute les mêmes fonctions que la bibliothèque et affiche le résultat ; chaque erreur revient sous forme de message et de code de sortie non nul. |
-| Tests | 🟡 | 243 tests passent (`cargo test`), avec des cas normaux, des cas limites et des entrées abîmées. |
+| Tests | 🟡 | 244 tests passent (`cargo test`), avec des cas normaux, des cas limites et des entrées abîmées. |
 | Sécurité | 🟡 | Rust sûr et simple (`forbid(unsafe_code)`) : rien ne panique sur les fichiers reçus et une mauvaise valeur est une erreur avec sa raison ; pas de revue indépendante. |
 | Fenêtre | 🟠 | Écrite (egui, `--features gui`) : ajouter ou déposer plusieurs couches et fichiers de perçage, afficher ou masquer chacune, zoom et déplacement, mesurer, vérifier l'alignement, exporter l'image en SVG ; sa logique est testée, mais elle n'a pas encore été compilée ni vue sur un écran. |
 | Matériel réel | 🔴 | Non essayé : rien ici n'a été exécuté sur une machine. |
@@ -57,7 +57,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 * **Les formes** (`src/scene.rs`, `eh3d-geometry`) : pastilles (rondes, rectangulaires, oblongues), pistes avec leur largeur, régions et arcs, le tout en millimètres quelles que soient les unités du fichier ; les trous d'un fichier de perçage deviennent des disques du diamètre de leur outil. Ce qui ne peut pas être dessiné exactement (polarité claire, répétition, macros) est listé, une fois chacun. Une piste tracée avec une ouverture rectangulaire est le rectangle balayé (le segment et l'ouverture, un polygone), et non une ligne à bouts ronds.
 * **L'image** (`src/svg.rs`) : chaque couche est un groupe avec sa couleur (d'après l'extension du fichier) et sa transparence, la carte vue de dessus avec y vers le haut ; une liste vide de couches donne une petite image vide, et les noms et couleurs sont échappés et vérifiés.
 * **Mesures et contrôles** (`src/measure.rs`, `src/align.rs`) : la piste la plus étroite, la distance entre deux pastilles, l'espace minimal entre pastilles rondes et pistes (bord à bord, 0 là où elles se touchent), les couches dont le centre est décalé et les trous qui ne tombent pas dans le cuivre. `check` dit quand il n'y a pas de couches à comparer au lieu d'affirmer qu'elles s'alignent, et `measure` prend exactement une couche. Chaque commande accepte aussi `--max-bytes N` (un fichier plus grand est refusé avant d'être lu, avec le message dans la langue du système) et `--arc-tolerance MM` (la précision des arcs).
-* **Ce qui peut manquer est dit :** la fenêtre montre les avertissements des lecteurs (dans sa langue) et ce qui d'un fichier n'est pas dessiné exactement, `measure`, `ruler` et `gap` l'écrivent sur la sortie d'erreur, et `--exact` refuse aussi un fichier sans commande de fin ou sans unités. `check` signale les couches qui n'ont rien à dessiner, un fichier de perçage sans aucun trou et une fente hors du cuivre, et `gap --min` n'est pas réussi quand du cuivre peut manquer dans une couche.
+* **Ce qui peut manquer est dit :** la fenêtre montre les avertissements des lecteurs (dans sa langue) et ce qui d'un fichier n'est pas dessiné exactement, `measure`, `ruler` et `gap` l'écrivent sur la sortie d'erreur, et `--exact` refuse aussi un fichier sans commande de fin ou sans unités, ou dont le format des coordonnées ou les zéros ont dû être supposés. `check` signale les couches qui n'ont rien à dessiner, un fichier de perçage sans aucun trou et une fente hors du cuivre, et `gap --min` n'est pas réussi quand du cuivre peut manquer dans une couche.
 
 ## 🧩 Rôle dans EH3D
 
@@ -176,7 +176,7 @@ Pour prendre une capture de la fenêtre sans l'ouvrir à la main, lancez-la avec
 
 ## 🧪 Tests
 
-La suite compte 243 tests (`cargo test`, exécutés sous Windows et Linux dans le CI). Ils vérifient les cas normaux, les cas limites et les entrées abîmées : fichiers vides, bruit et fichiers coupés ne font jamais paniquer. Le CI exécute aussi `cargo fmt --check`, `cargo clippy` avec les avertissements comme erreurs et `python -I tools/ci_validate.py`.
+La suite compte 244 tests (`cargo test`, exécutés sous Windows et Linux dans le CI). Ils vérifient les cas normaux, les cas limites et les entrées abîmées : fichiers vides, bruit et fichiers coupés ne font jamais paniquer. Le CI exécute aussi `cargo fmt --check`, `cargo clippy` avec les avertissements comme erreurs et `python -I tools/ci_validate.py`.
 
 ## 🏗️ Compilation et publication
 

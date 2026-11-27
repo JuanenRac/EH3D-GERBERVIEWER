@@ -131,3 +131,30 @@ fn measure_and_ruler_say_what_they_could_not_see() {
     assert_eq!(code, Some(0), "{e}");
     assert!(e.contains("4 rectangular pads"), "{e}");
 }
+
+#[test]
+fn a_drill_file_read_by_supposing_its_format_is_doubtful() {
+    // a unit with no digits, and digits with no word about the zeros
+    for (name, drill) in [
+        ("format", "M48\nMETRIC\nT1C0.8\n%\nT1\nX12345Y20000\nM30\n"),
+        (
+            "zeros",
+            "M48\nMETRIC,000.000\nT1C0.8\n%\nT1\nX1000Y2000\nM30\n",
+        ),
+    ] {
+        let read = eh3d_parser_excellon::parse(drill);
+        assert!(
+            eh3d_gerberviewer::doubtful(&read.diagnostics),
+            "{name}: {:?}",
+            read.diagnostics
+        );
+        let svg = file(&format!("assumed-{name}.svg"), "");
+        let (code, _, e) = run(&[
+            "render",
+            text(&svg),
+            text(&file(&format!("assumed-{name}.drl"), drill)),
+            "--exact",
+        ]);
+        assert_eq!(code, Some(1), "{name}: {e}");
+    }
+}
