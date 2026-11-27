@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **A supposed coordinate format is a doubt (safety):** a drill or Gerber file whose coordinate format or zero suppression had to be supposed may be at another scale, and nothing said so in the window or the checks. It is now treated like the other doubts: the scene says it, `--exact` refuses it and a gap measured on it is not conclusive. The shared readers are taken at v0.1.4, which gives these two warnings, leaves out zero sets and end positions and tells what it passes over. 1 test.
+
 ## [0.1.1] - The window says what a layer may be missing and checks no longer pass on copper that was not drawn
 
 - **The window says what a layer may be missing (fix):** the warnings of the readers (a file with no end command, no units, text after its end...) and what is not drawn exactly (a hole left out, routes of a drill file, a macro aperture) were dropped without a word by the window and, for the warnings, by `project render`. They are listed in the results, with the reader's headline in the language of the window.

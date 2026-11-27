@@ -17,7 +17,7 @@
 
 ---
 
-**Honesty check - what actually runs today:** a Rust library and a command line program (`eh3d-gerberview`) with 243 tests that run on a computer: draws Gerber layers and drill files as an SVG picture, measures tracks and gaps and checks that the layers line up. It has a window (built with `--features gui`) that shows the layers one over the other with zoom and panning, but the window has not been looked at on a screen yet; it has not been tried on a machine and it has not been checked against a collection of real files.
+**Honesty check - what actually runs today:** a Rust library and a command line program (`eh3d-gerberview`) with 244 tests that run on a computer: draws Gerber layers and drill files as an SVG picture, measures tracks and gaps and checks that the layers line up. It has a window (built with `--features gui`) that shows the layers one over the other with zoom and panning, but the window has not been looked at on a screen yet; it has not been tried on a machine and it has not been checked against a collection of real files.
 
 ---
 
@@ -30,7 +30,7 @@
 |---|---|
 | Version | `0.1.1` |
 | Maturity | Functional |
-| Tests | 243 |
+| Tests | 244 |
 | Stack | Rust |
 | On real hardware | Not tried: nothing here has run on a machine |
 
@@ -46,7 +46,7 @@ Each line is one part of this repository and the light says how far it is today.
 |---|---|---|
 | Core | 🟡 | draws Gerber layers and drill files as an SVG picture, measures tracks and gaps and checks that the layers line up; tested on a computer with normal and damaged input, not with a collection of real files. |
 | Command line | 🟡 | `eh3d-gerberview` runs the same functions as the library and prints the result; every error comes back as a message and a non-zero exit code. |
-| Tests | 🟡 | 243 tests pass (`cargo test`), with normal cases, edge cases and damaged input. |
+| Tests | 🟡 | 244 tests pass (`cargo test`), with normal cases, edge cases and damaged input. |
 | Security | 🟡 | Plain safe Rust (`forbid(unsafe_code)`): nothing panics on the files it is given and a bad value is an error with its reason; no independent review. |
 | Window | 🟠 | Written (egui, `--features gui`): add or drop several layers and drill files, show or hide each, zoom and pan, measure, check the alignment, export the picture as SVG; its logic is tested, but it has not been built or looked at on a screen yet. |
 | Real hardware | 🔴 | Not tried: nothing here has been run on a machine. |
@@ -57,7 +57,7 @@ Each line is one part of this repository and the light says how far it is today.
 * **The shapes** (`src/scene.rs`, `eh3d-geometry`): pads (round, rectangular, obround), tracks with their width, regions and arcs, all in millimetres whatever the units of the file; the holes of a drill file become discs of the diameter of their tool. What cannot be drawn exactly (clear polarity, step and repeat, macro apertures) is listed, once each. A track drawn with a rectangular pen is the swept rectangle (the segment and the pen, a polygon), not a line with round ends.
 * **The picture** (`src/svg.rs`): every layer is a group with its own colour (from the extension of the file) and transparency, the board seen from above with y up; an empty list of layers gives a small empty picture, and names and colours are escaped and checked.
 * **Measures and checks** (`src/measure.rs`, `src/align.rs`): the narrowest track, the distance between two pads, the smallest gap between round pads and tracks (edge to edge, 0 where they touch), the layers whose centre is off, and the holes that are not inside the copper. `check` says when there are no layers to compare instead of claiming that they line up, and `measure` takes exactly one layer. Every command also takes `--max-bytes N` (a larger file is refused before it is read, with the message in the language of the system) and `--arc-tolerance MM` (how closely arcs are followed).
-* **What may be missing is said:** the window shows the warnings of the readers (in its language) and what of a file is not drawn exactly, `measure`, `ruler` and `gap` write it on the error output, and `--exact` also refuses a file with no end command or no units. `check` reports layers with nothing to draw, a drill file with no hole and a slot outside the copper, and `gap --min` does not pass when copper may be missing from a layer.
+* **What may be missing is said:** the window shows the warnings of the readers (in its language) and what of a file is not drawn exactly, `measure`, `ruler` and `gap` write it on the error output, and `--exact` also refuses a file with no end command or no units, or whose coordinate format or zeros had to be supposed. `check` reports layers with nothing to draw, a drill file with no hole and a slot outside the copper, and `gap --min` does not pass when copper may be missing from a layer.
 
 ## 🧩 Role in EH3D
 
@@ -176,7 +176,7 @@ To take a picture of the window without opening it by hand, run it with `--shot 
 
 ## 🧪 Testing
 
-The suite has 243 tests (`cargo test`, run on Windows and Linux in the CI). They check the normal cases, the edge cases and damaged input: empty files, garbage and cut files never panic. The CI also runs `cargo fmt --check`, `cargo clippy` with warnings as errors and `python -I tools/ci_validate.py`.
+The suite has 244 tests (`cargo test`, run on Windows and Linux in the CI). They check the normal cases, the edge cases and damaged input: empty files, garbage and cut files never panic. The CI also runs `cargo fmt --check`, `cargo clippy` with warnings as errors and `python -I tools/ci_validate.py`.
 
 ## 🏗️ Build & Release
 
