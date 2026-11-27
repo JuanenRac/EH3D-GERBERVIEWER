@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.1] - The window says what a layer may be missing and checks no longer pass on copper that was not drawn
+
 - **The window says what a layer may be missing (fix):** the warnings of the readers (a file with no end command, no units, text after its end...) and what is not drawn exactly (a hole left out, routes of a drill file, a macro aperture) were dropped without a word by the window and, for the warnings, by `project render`. They are listed in the results, with the reader's headline in the language of the window.
 - **`gap --min` no longer passes on missing copper (fix):** with a macro aperture, a step and repeat or another shape left out, or a file that may be cut or has no units, a gap that is big enough ends with 2 as not conclusive. `measure` and `ruler` now write the same notes, and `measure` says how many rectangular pads, obround pads and regions it did not look at. `--exact` also refuses a file with no end command or no units.
 - **`check` no longer calls good what it did not look at (fix):** two layers with nothing to draw "lined up", a slot outside the copper was not looked at (only round holes were) and a drill file with no hole gave "the holes are inside the copper". All three are findings now.
