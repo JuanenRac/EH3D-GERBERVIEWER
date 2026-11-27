@@ -2,7 +2,7 @@
 //! checking, what was last said to the person and the zoom of the picture. The screen (`gui`, built with the `gui` feature) only draws this and passes on what the person does,
 //! so everything here is tested as plain code.
 
-use crate::align::{compare_boxes, holes_outside};
+use crate::align::{all_empty, compare_boxes, holes_outside, no_holes, slots_outside};
 use crate::draw::Drawing;
 use crate::eh3dfile::{self, JobFile};
 use crate::lang::{fill, Lang, Msg};
@@ -10,11 +10,13 @@ use crate::layers::{Layer as StackLayer, Stack, Warning};
 use crate::looks_like_drill;
 use crate::measure::{min_clearance, min_track_width, pad_centres};
 use crate::ruler::{measure_points, snap, Measurement, SnapKind, Snapped, Unit};
-use crate::scene::{from_excellon, from_gerber_with, Bounds, Scene, SceneOptions};
+use crate::scene::{from_excellon, from_gerber_with, Bounds, Scene, SceneOptions, Shape};
 use crate::settings::Settings;
 use crate::svg::{default_color, render, Layer as SvgLayer};
 use crate::viewport::Viewport;
-use eh3d_parser_gerber::{read_file_limited, InputError, InputLimits, ReadError, Severity};
+use eh3d_parser_gerber::{
+    read_file_limited, Diagnostic, InputError, InputLimits, ReadError, Severity,
+};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -167,6 +169,8 @@ pub enum Report {
     },
     FewShapes,
     Pads(usize),
+    /// How many shapes the narrowest track and the smallest gap did not look at.
+    NotCompared(usize),
     Lined,
     HolesInside,
     NothingChecked,
@@ -196,6 +200,9 @@ impl Report {
             ),
             Report::FewShapes => Msg::ReportFew.tr(lang).to_string(),
             Report::Pads(n) => fill(Msg::ReportPads.tr(lang), &[n.to_string().as_str()]),
+            Report::NotCompared(n) => {
+                fill(Msg::ReportNotCompared.tr(lang), &[n.to_string().as_str()])
+            }
             Report::Lined => Msg::ReportLined.tr(lang).to_string(),
             Report::HolesInside => Msg::ReportHoles.tr(lang).to_string(),
             Report::NothingChecked => Msg::ReportNothing.tr(lang).to_string(),
@@ -211,7 +218,10 @@ impl Report {
     pub fn is_problem(&self) -> bool {
         matches!(
             self,
-            Report::Finding { .. } | Report::NothingChecked | Report::Notice(_)
+            Report::Finding { .. }
+                | Report::NothingChecked
+                | Report::NotCompared(_)
+                | Report::Notice(_)
         )
     }
 }
@@ -231,6 +241,49 @@ pub struct LayerView {
     pub opacity: Option<f64>,
     /// The file of the job of a project this layer came from.
     pub job: Option<JobFile>,
+    /// What the reader warned about: the first warning of each kind and how many there were.
+    pub warnings: Vec<(Diagnostic, usize)>,
+}
+
+/// The first warning of each code with the number of warnings of that code.
+fn grouped(diagnostics: &[Diagnostic]) -> Vec<(Diagnostic, usize)> {
+    let mut out: Vec<(Diagnostic, usize)> = Vec::new();
+    for d in diagnostics {
+        if d.severity == Severity::Info {
+            continue;
+        }
+        match out.iter_mut().find(|(first, _)| first.code == d.code) {
+            Some((_, n)) => *n += 1,
+            None => out.push((d.clone(), 1)),
+        }
+    }
+    out
+}
+
+/// What a person has to know about a layer before trusting it: the warnings of its reader (in the language of the person) and what of the file is not drawn exactly.
+pub fn layer_warnings(layer: &LayerView, lang: Lang) -> Vec<Report> {
+    let language = eh3d_parser_common::Language::from_tag(lang.code())
+        .unwrap_or(eh3d_parser_common::Language::En);
+    let warned = layer.warnings.iter().map(|(d, n)| {
+        let text = eh3d_parser_common::localize(d, language);
+        if *n > 1 {
+            format!("{text} x{n}")
+        } else {
+            text
+        }
+    });
+    let noted = layer
+        .scene
+        .notes
+        .iter()
+        .map(|note| fill(Msg::NotExact.tr(lang), &[note.as_str()]));
+    warned
+        .chain(noted)
+        .map(|message| Report::Finding {
+            layer: layer.name.clone(),
+            message,
+        })
+        .collect()
 }
 
 /// The ruler of the window: two clicks on the selected layer.
@@ -312,14 +365,19 @@ pub fn layer_from_bytes(
     arc_tolerance_mm: f64,
 ) -> Result<LayerView, String> {
     let text = String::from_utf8_lossy(bytes);
-    let (scene, drill, errors) = if drill || looks_like_drill(&text) {
+    let (scene, drill, errors, warnings) = if drill || looks_like_drill(&text) {
         let file = eh3d_parser_excellon::parse(&text);
         let errors = file
             .diagnostics
             .iter()
             .filter(|d| d.severity == Severity::Error)
             .count();
-        (from_excellon(&file), true, errors)
+        (
+            from_excellon(&file),
+            true,
+            errors,
+            grouped(&file.diagnostics),
+        )
     } else {
         let file = eh3d_parser_gerber::parse(&text);
         let errors = file
@@ -331,6 +389,7 @@ pub fn layer_from_bytes(
             from_gerber_with(&file, &SceneOptions { arc_tolerance_mm }),
             false,
             errors,
+            grouped(&file.diagnostics),
         )
     };
     if errors > 0 {
@@ -354,6 +413,7 @@ pub fn layer_from_bytes(
         visible: true,
         opacity: None,
         job: None,
+        warnings,
     })
 }
 
@@ -533,9 +593,10 @@ impl Window {
                     width_mm: b.width(),
                     height_mm: b.height(),
                 };
+                let warnings = layer_warnings(&layer, self.lang);
                 self.layers.push(layer);
                 self.selected = Some(self.layers.len() - 1);
-                self.report.clear();
+                self.report = warnings;
                 self.clear_ruler();
                 true
             }
@@ -620,7 +681,7 @@ impl Window {
                 self.layers = layers;
                 self.selected = Some(count - 1);
                 self.project = Some(path.to_path_buf());
-                self.report.clear();
+                self.report = self.all_warnings();
                 self.clear_ruler();
                 self.status = if state.out_of_date {
                     Status::ProjectStale { name }
@@ -672,6 +733,8 @@ impl Window {
         ) {
             Ok(notices) => {
                 self.report = notices.into_iter().map(Report::Notice).collect();
+                let warnings = self.all_warnings();
+                self.report.extend(warnings);
                 self.status = Status::ProjectSaved {
                     name: file_name(&project),
                 };
@@ -682,6 +745,14 @@ impl Window {
                 false
             }
         }
+    }
+
+    /// The warnings of every layer that is open.
+    fn all_warnings(&self) -> Vec<Report> {
+        self.layers
+            .iter()
+            .flat_map(|l| layer_warnings(l, self.lang))
+            .collect()
     }
 
     /// The opacity a layer is drawn with: its own, or the one of the parameters.
@@ -875,6 +946,15 @@ impl Window {
             }
         }
         out.push(Report::Pads(pad_centres(scene).len()));
+        let left = scene
+            .shapes
+            .iter()
+            .filter(|s| !matches!(s, Shape::Disc { .. } | Shape::Stroke { .. }))
+            .count();
+        if left > 0 {
+            out.push(Report::NotCompared(left));
+        }
+        out.extend(layer_warnings(layer, self.lang));
         self.report = out;
         true
     }
@@ -899,11 +979,16 @@ impl Window {
             .map(|l| (l.name.clone(), l.scene.bounds()))
             .collect();
         let mut findings = compare_boxes(&boxes, tolerance);
+        findings.extend(all_empty(&boxes));
+        for holes in self.layers.iter().filter(|l| l.drill) {
+            findings.extend(no_holes(&holes.scene, &holes.name));
+        }
         let mut holes_checked = false;
         if let Some(copper) = self.layers.iter().find(|l| !l.drill) {
             for holes in self.layers.iter().filter(|l| l.drill) {
                 holes_checked = true;
                 findings.extend(holes_outside(&copper.scene, &holes.scene, &holes.name));
+                findings.extend(slots_outside(&copper.scene, &holes.scene, &holes.name));
             }
         }
         let mut out = Vec::new();
@@ -923,6 +1008,7 @@ impl Window {
                 message: f.message,
             }));
         }
+        out.extend(self.all_warnings());
         self.report = out;
         true
     }

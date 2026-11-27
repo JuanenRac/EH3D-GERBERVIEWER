@@ -37,6 +37,59 @@ pub fn compare_boxes(layers: &[(String, Bounds)], tolerance_mm: f64) -> Vec<Find
     out
 }
 
+/// The layers (copper, mask, outline...) when none of them has anything to draw: `compare_boxes` has no box to compare then and would find nothing wrong with them.
+pub fn all_empty(layers: &[(String, Bounds)]) -> Vec<Finding> {
+    if layers.iter().any(|(_, b)| !b.is_empty()) {
+        return Vec::new();
+    }
+    layers
+        .iter()
+        .map(|(name, _)| Finding {
+            layer: name.clone(),
+            message: "has nothing to draw".into(),
+        })
+        .collect()
+}
+
+/// A drill file with neither a hole nor a slot: there is nothing that could be inside the copper.
+pub fn no_holes(holes: &Scene, layer: &str) -> Option<Finding> {
+    let any = holes
+        .shapes
+        .iter()
+        .any(|s| matches!(s, Shape::Disc { .. } | Shape::Stroke { .. }));
+    (!any).then(|| Finding {
+        layer: layer.to_string(),
+        message: "has no hole and no slot to check".into(),
+    })
+}
+
+/// The slots (the strokes of a drill file) that lie outside the box of `copper`, as one finding each.
+pub fn slots_outside(copper: &Scene, holes: &Scene, layer: &str) -> Vec<Finding> {
+    let b = copper.bounds();
+    holes
+        .shapes
+        .iter()
+        .filter_map(|s| match s {
+            Shape::Stroke { x0, y0, x1, y1, w } => Some((*x0, *y0, *x1, *y1, *w)),
+            _ => None,
+        })
+        .filter(|(x0, y0, x1, y1, w)| {
+            let r = w / 2.0;
+            b.is_empty()
+                || x0.min(*x1) - r < b.min_x
+                || x0.max(*x1) + r > b.max_x
+                || y0.min(*y1) - r < b.min_y
+                || y0.max(*y1) + r > b.max_y
+        })
+        .map(|(x0, y0, x1, y1, w)| Finding {
+            layer: layer.to_string(),
+            message: format!(
+                "the slot of {w:.2} mm from ({x0:.3}, {y0:.3}) to ({x1:.3}, {y1:.3}) is not inside the copper"
+            ),
+        })
+        .collect()
+}
+
 /// The holes (discs) of `holes` that lie outside the box of `copper`, as one finding each; a layer of copper with nothing in it makes every hole a finding.
 pub fn holes_outside(copper: &Scene, holes: &Scene, layer: &str) -> Vec<Finding> {
     let b = copper.bounds();
