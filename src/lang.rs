@@ -152,10 +152,12 @@ pub enum Msg {
     ProjectStale,
     NoProject,
     SettingsLoaded,
+    NotExact,
+    ReportNotCompared,
 }
 
 impl Msg {
-    pub const ALL: [Msg; 64] = [
+    pub const ALL: [Msg; 66] = [
         Msg::Open,
         Msg::Export,
         Msg::Measure,
@@ -220,6 +222,8 @@ impl Msg {
         Msg::ProjectStale,
         Msg::NoProject,
         Msg::SettingsLoaded,
+        Msg::NotExact,
+        Msg::ReportNotCompared,
     ];
 
     /// The words in the order English, Spanish, German, French, Italian, Japanese, Chinese, Portuguese.
@@ -864,6 +868,26 @@ impl Msg {
                 "{0} から設定を読み込みました",
                 "已从 {0} 读取设置",
                 "Definições lidas de {0}",
+            ],
+            Msg::NotExact => [
+                "not drawn exactly: {0}",
+                "no se dibuja exactamente: {0}",
+                "nicht genau gezeichnet: {0}",
+                "pas dessiné exactement : {0}",
+                "non disegnato esattamente: {0}",
+                "正確には描かれていません: {0}",
+                "未精确绘制：{0}",
+                "não desenhado com exatidão: {0}",
+            ],
+            Msg::ReportNotCompared => [
+                "Not compared: {0} rectangular or obround pads and regions",
+                "Sin comparar: {0} pads rectangulares u ovalados y regiones",
+                "Nicht verglichen: {0} rechteckige oder ovale Pads und Flächen",
+                "Non comparés : {0} pastilles rectangulaires ou oblongues et zones",
+                "Non confrontati: {0} pad rettangolari o ovali e aree",
+                "未比較: 長方形・長円パッドと塗りつぶし {0} 個",
+                "未比较：{0} 个矩形或长圆焊盘和区域",
+                "Não comparados: {0} pads retangulares ou ovais e regiões",
             ],
         }
     }

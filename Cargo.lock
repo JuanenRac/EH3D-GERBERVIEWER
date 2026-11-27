@@ -536,6 +536,7 @@ version = "0.1.0"
 dependencies = [
  "eframe",
  "eh3d-geometry",
+ "eh3d-parser-common",
  "eh3d-parser-excellon",
  "eh3d-parser-gerber",
  "png 0.17.16",

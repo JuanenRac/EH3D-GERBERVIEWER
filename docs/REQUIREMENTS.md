@@ -2,7 +2,7 @@
 
 This register is the single source of the state of each capability: `STATUS.md` and the README files cite it and never state a state that it does not. A state is one of `planned`, `prototype`, `implemented` and `validated`. `validated` means that a person has run the capability on a real machine and the evidence of the manifest says `bench` or `field`; nothing here is validated, because nothing of this program has been compared with a collection of real boards.
 
-The register has 37 requirements: 30 implemented, 5 prototype, 2 planned and 0 validated. By progress: 30 done, 5 partial, 0 pending and 2 blocked. High coverage is not proof of correctness, so each row says how it is checked: the test that names it, and what it shows.
+The register has 40 requirements: 33 implemented, 5 prototype, 2 planned and 0 validated. By progress: 33 done, 5 partial, 0 pending and 2 blocked. High coverage is not proof of correctness, so each row says how it is checked: the test that names it, and what it shows.
 
 ## How to read the register
 
@@ -81,3 +81,6 @@ The check is `tests/reqs.rs`: it reads this table, finds each test and fails whe
 | GRBV-035 | The picture is kept in the branch `gerberviewer/` only, and the other branches keep their content. | implemented | done | host-test | `project::the_result_goes_to_its_own_branch_and_the_other_branches_keep_their_content` | - |
 | GRBV-036 | A job that changes after the picture was made is told as out of date, and a result made from old layers is not saved over it. | implemented | done | host-test | `project::a_job_that_changes_leaves_the_result_out_of_date_until_it_is_made_again` | - |
 | GRBV-037 | The window opens the job of a project, saves its picture and says when it is out of date. | prototype | partial | host-test | `project::the_window_opens_a_project_saves_its_picture_and_says_when_it_is_out_of_date` | The logic is tested without a screen; no person has looked at the window. |
+| GRBV-038 | `check` does not call empty layers lined up, and a slot outside the copper and a drill file with no hole are findings. | implemented | done | host-test | `doubts::a_slot_outside_the_copper_and_a_drill_file_with_no_hole_are_findings` | The copper is taken by its box. |
+| GRBV-039 | A file that may be cut or has no units is said in the window and refused by `--exact`. | implemented | done | host-test | `doubts::the_window_says_that_a_file_may_be_cut` | The details of a warning are the English ones of the reader. |
+| GRBV-040 | `gap --min` does not pass when copper may be missing from the shapes of a layer. | implemented | done | host-test | `doubts::a_gap_that_is_big_only_because_something_was_left_out_does_not_pass` | - |

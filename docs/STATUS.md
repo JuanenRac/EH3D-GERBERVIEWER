@@ -6,7 +6,7 @@ EH3D-GERBERVIEWER is a working program on a computer: a library (`eh3d_gerbervie
 
 ## Capabilities
 
-The official state of each capability is in `REQUIREMENTS.md`. The register has 37 requirements: 30 implemented, 5 prototype, 2 planned and 0 validated. By progress: 30 done, 5 partial, 0 pending and 2 blocked. This page never states a state that `REQUIREMENTS.md` does not.
+The official state of each capability is in `REQUIREMENTS.md`. The register has 40 requirements: 33 implemented, 5 prototype, 2 planned and 0 validated. By progress: 33 done, 5 partial, 0 pending and 2 blocked. This page never states a state that `REQUIREMENTS.md` does not.
 
 ## Open questions
 

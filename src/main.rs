@@ -4,7 +4,7 @@
 
 mod cli_args;
 
-use eh3d_gerberviewer::align::{compare_boxes, holes_outside};
+use eh3d_gerberviewer::align::{all_empty, compare_boxes, holes_outside, no_holes, slots_outside};
 use eh3d_gerberviewer::eh3dfile;
 use eh3d_gerberviewer::gap::layer_gap;
 use eh3d_gerberviewer::measure::{min_clearance, min_track_width, pad_centres};
@@ -79,7 +79,8 @@ const HELP: &str = "eh3d-gerberview: a light viewer of Gerber layers and drill f
   eh3d-gerberview [gui] [LAYER...]                                       the window (a build with --features gui): with no arguments, or with a single layer, it opens; the commands above never open it
   eh3d-gerberview gui [FILE...] --shot OUT.png [--size WxH] [--theme forge|dark|light] [--wait N] [--lang CODE] [--replace]   a picture of the window (a build with --features gui)
 
-render and check write on the error output what a layer is not drawn exactly (clear polarity, step and repeat, macro apertures); with --exact they refuse to go on when there is any.
+render, check, measure, ruler and gap write on the error output what a layer is not drawn exactly (clear polarity, step and repeat, macro apertures) or may be missing (a file with
+no end command or no units); with --exact render and check refuse to go on when there is any, and gap --min does not pass when copper may be missing.
 
 Every command also takes --max-bytes N (the largest file read, 268435456 by default; a larger one is refused before it is read) and --arc-tolerance MM (how closely
 arcs are followed, 0.005 by default).
@@ -174,6 +175,9 @@ fn load(path: &str, opts: &Reading) -> Result<Scene, String> {
     load_kind(path, opts).map(|(scene, _)| scene)
 }
 
+/// The note of a scene whose reader raised a doubt about the file as a whole (see the warnings printed before it).
+const DOUBT: &str = "the file may be cut short or in other units (see the warnings of the reader)";
+
 /// Reads a layer and says whether it is a drill file: by its extension, or by its header `M48` when the name says nothing (`.txt`, `.nc`, no extension).
 fn load_kind(path: &str, opts: &Reading) -> Result<(Scene, bool), String> {
     use eh3d_parser_gerber::{read_file_limited, InputError, InputLimits, ReadError};
@@ -193,19 +197,24 @@ fn load_kind(path: &str, opts: &Reading) -> Result<(Scene, bool), String> {
     if is_drill(path) || eh3d_gerberviewer::looks_like_drill(&text) {
         let file = eh3d_parser_excellon::parse(&text);
         report(path, &file.diagnostics)?;
-        Ok((from_excellon(&file), true))
+        let mut scene = from_excellon(&file);
+        if eh3d_gerberviewer::doubtful(&file.diagnostics) {
+            scene.notes.push(DOUBT.to_string());
+        }
+        Ok((scene, true))
     } else {
         let file = eh3d_parser_gerber::parse(&text);
         report(path, &file.diagnostics)?;
-        Ok((
-            from_gerber_with(
-                &file,
-                &SceneOptions {
-                    arc_tolerance_mm: opts.arc_tolerance_mm,
-                },
-            ),
-            false,
-        ))
+        let mut scene = from_gerber_with(
+            &file,
+            &SceneOptions {
+                arc_tolerance_mm: opts.arc_tolerance_mm,
+            },
+        );
+        if eh3d_gerberviewer::doubtful(&file.diagnostics) {
+            scene.notes.push(DOUBT.to_string());
+        }
+        Ok((scene, false))
     }
 }
 
@@ -258,6 +267,16 @@ fn write_atomic(path: &Path, text: &str) -> Result<(), String> {
             let _ = fs::remove_file(&tmp);
             format!("{}: {e}", path.display())
         })
+}
+
+/// The shapes that the narrowest track and the smallest gap of one layer do not look at.
+fn not_compared(scene: &Scene) -> usize {
+    use eh3d_gerberviewer::scene::Shape;
+    scene
+        .shapes
+        .iter()
+        .filter(|s| !matches!(s, Shape::Disc { .. } | Shape::Stroke { .. }))
+        .count()
 }
 
 fn short(path: &str) -> String {
@@ -405,6 +424,13 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
                 ));
             }
             let s = load_drawable(p, &opts)?;
+            say_notes([(p.as_str(), &s)].into_iter());
+            let left = not_compared(&s);
+            if left > 0 {
+                eprintln!(
+                    "note: {left} rectangular pads, obround pads and regions are not in the narrowest track nor in the smallest gap (the command gap compares two layers with every shape)"
+                );
+            }
             match min_track_width(&s) {
                 Some(w) => println!("narrowest track: {w:.3} mm"),
                 None => println!("no tracks"),
@@ -440,6 +466,7 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
                 .map(|t| cli_args::num(t, "coordinate"))
                 .collect::<Result<Vec<_>, _>>()?;
             let scene = load_drawable(&args[0], &opts)?;
+            say_notes([(args[0].as_str(), &scene)].into_iter());
             let m = ruler(
                 &scene,
                 (coords[0], coords[1]),
@@ -475,8 +502,17 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
                     report.skipped
                 );
             }
+            // a gap that is big enough proves nothing when copper may be missing from the shapes or their size is in doubt
+            let unsure = report.skipped > 0
+                || a.notes
+                    .iter()
+                    .chain(&b.notes)
+                    .any(|n| eh3d_gerberviewer::may_widen_gaps(n));
             let Some(g) = report.best else {
                 println!("one of the layers has no shape to compare");
+                if min.is_some() {
+                    return Err("verification failed: there was nothing to compare".into());
+                }
                 return Ok(());
             };
             println!(
@@ -497,6 +533,10 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
             match min {
                 Some(m) if g.distance < m => Err(format!(
                     "verification failed: the gap {:.3} mm is below the minimum {m} mm",
+                    g.distance
+                )),
+                Some(m) if m > 0.0 && unsure => Err(format!(
+                    "verification failed: not conclusive, the gap {:.3} mm is not below {m} mm but something of a layer is not drawn exactly (see the notes above)",
                     g.distance
                 )),
                 _ => Ok(()),
@@ -524,11 +564,16 @@ fn run(mut args: Vec<String>) -> Result<(), String> {
                 .map(|(n, _, s)| (n.clone(), s.bounds()))
                 .collect();
             let mut findings = compare_boxes(&boxes, tol);
+            findings.extend(all_empty(&boxes));
+            for (name, _, holes) in scenes.iter().filter(|(_, d, _)| *d) {
+                findings.extend(no_holes(holes, name));
+            }
             let mut holes_checked = false;
             if let Some((_, _, copper)) = scenes.iter().find(|(_, d, _)| !*d) {
                 for (name, _, holes) in scenes.iter().filter(|(_, d, _)| *d) {
                     holes_checked = true;
                     findings.extend(holes_outside(copper, holes, name));
+                    findings.extend(slots_outside(copper, holes, name));
                 }
             }
             if findings.is_empty() {
@@ -601,6 +646,12 @@ fn project(mut args: Vec<String>) -> Result<(), String> {
             let mut layers = Vec::new();
             for f in &job {
                 let view = job_layer(f, lang, arc)?;
+                for (d, count) in &view.warnings {
+                    eprintln!(
+                        "{}: line {}: warning: {} [{}] (x{count})",
+                        view.name, d.line, d.message, d.code
+                    );
+                }
                 let (r, g, b) = view.rgb;
                 layers.push(Layer {
                     name: view.name,
