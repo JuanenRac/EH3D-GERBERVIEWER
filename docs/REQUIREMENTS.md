@@ -42,9 +42,6 @@ The check is `tests/reqs.rs`: it reads this table, finds each test and fails whe
 | GRBV-016 | Only the centres of the layers are compared, so a solder mask bigger than the copper lines up. | implemented | done | host-test | `more::layers_with_the_same_centre_and_other_sizes_line_up_because_only_the_centre_is_compared` | - |
 | GRBV-017 | A hole outside the copper is reported, and a hole that touches the edge of the copper is inside. | implemented | done | host-test | `viewer::a_hole_that_touches_the_edge_of_the_copper_is_inside_and_one_beyond_it_is_not` | - |
 | GRBV-018 | `check` says when there are no layers to compare instead of claiming that they line up. | implemented | done | host-test | `more::an_empty_layer_is_said_to_have_nothing_and_the_reference_is_the_first_one_with_something` | - |
-| GRBV-038 | `check` does not call empty layers lined up, and a slot outside the copper and a drill file with no hole are findings. | implemented | done | host-test | `doubts::a_slot_outside_the_copper_and_a_drill_file_with_no_hole_are_findings` | The copper is taken by its box. |
-| GRBV-039 | A file that may be cut or has no units is said in the window and refused by `--exact`. | implemented | done | host-test | `doubts::the_window_says_that_a_file_may_be_cut` | The details of a warning are the English ones of the reader. |
-| GRBV-040 | `gap --min` does not pass when copper may be missing from the shapes of a layer. | implemented | done | host-test | `doubts::a_gap_that_is_big_only_because_something_was_left_out_does_not_pass` | - |
 
 ## Robustness and window
 
@@ -84,3 +81,6 @@ The check is `tests/reqs.rs`: it reads this table, finds each test and fails whe
 | GRBV-035 | The picture is kept in the branch `gerberviewer/` only, and the other branches keep their content. | implemented | done | host-test | `project::the_result_goes_to_its_own_branch_and_the_other_branches_keep_their_content` | - |
 | GRBV-036 | A job that changes after the picture was made is told as out of date, and a result made from old layers is not saved over it. | implemented | done | host-test | `project::a_job_that_changes_leaves_the_result_out_of_date_until_it_is_made_again` | - |
 | GRBV-037 | The window opens the job of a project, saves its picture and says when it is out of date. | prototype | partial | host-test | `project::the_window_opens_a_project_saves_its_picture_and_says_when_it_is_out_of_date` | The logic is tested without a screen; no person has looked at the window. |
+| GRBV-038 | `check` does not call empty layers lined up, and a slot outside the copper and a drill file with no hole are findings. | implemented | done | host-test | `doubts::a_slot_outside_the_copper_and_a_drill_file_with_no_hole_are_findings` | The copper is taken by its box. |
+| GRBV-039 | A file that may be cut or has no units is said in the window and refused by `--exact`. | implemented | done | host-test | `doubts::the_window_says_that_a_file_may_be_cut` | The details of a warning are the English ones of the reader. |
+| GRBV-040 | `gap --min` does not pass when copper may be missing from the shapes of a layer. | implemented | done | host-test | `doubts::a_gap_that_is_big_only_because_something_was_left_out_does_not_pass` | - |
