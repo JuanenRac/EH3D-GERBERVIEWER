@@ -4,6 +4,11 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The window says what a layer may be missing (fix):** the warnings of the readers (a file with no end command, no units, text after its end...) and what is not drawn exactly (a hole left out, routes of a drill file, a macro aperture) were dropped without a word by the window and, for the warnings, by `project render`. They are listed in the results, with the reader's headline in the language of the window.
+- **`gap --min` no longer passes on missing copper (fix):** with a macro aperture, a step and repeat or another shape left out, or a file that may be cut or has no units, a gap that is big enough ends with 2 as not conclusive. `measure` and `ruler` now write the same notes, and `measure` says how many rectangular pads, obround pads and regions it did not look at. `--exact` also refuses a file with no end command or no units.
+- **`check` no longer calls good what it did not look at (fix):** two layers with nothing to draw "lined up", a slot outside the copper was not looked at (only round holes were) and a drill file with no hole gave "the holes are inside the copper". All three are findings now.
+- 6 new tests of these cases.
+
 - **Known limits of the README brought in line with the program:** the command `gap` compares every kind of shape between two layers, while `measure` and the window compare only round pads and tracks inside one layer; the two clicks of the ruler are no longer listed as pending. The eight languages say the same.
 - **A picture is never written over a project:** `render OUT.svg LAYER...` with the two arguments the other way round (`render board.eh3d top.gbr`) wrote the picture over the `.eh3d` project and lost the work of every program in it; an output that ends in `.eh3d` is refused now.
 - 3 new tests: damaged and cut projects are refused by every command and left as they were, and a hostile name of a layer does not get into the markup of the picture.

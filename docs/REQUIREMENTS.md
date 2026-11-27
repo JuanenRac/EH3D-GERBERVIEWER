@@ -2,7 +2,7 @@
 
 This register is the single source of the state of each capability: `STATUS.md` and the README files cite it and never state a state that it does not. A state is one of `planned`, `prototype`, `implemented` and `validated`. `validated` means that a person has run the capability on a real machine and the evidence of the manifest says `bench` or `field`; nothing here is validated, because nothing of this program has been compared with a collection of real boards.
 
-The register has 37 requirements: 30 implemented, 5 prototype, 2 planned and 0 validated. By progress: 30 done, 5 partial, 0 pending and 2 blocked. High coverage is not proof of correctness, so each row says how it is checked: the test that names it, and what it shows.
+The register has 40 requirements: 33 implemented, 5 prototype, 2 planned and 0 validated. By progress: 33 done, 5 partial, 0 pending and 2 blocked. High coverage is not proof of correctness, so each row says how it is checked: the test that names it, and what it shows.
 
 ## How to read the register
 
@@ -42,6 +42,9 @@ The check is `tests/reqs.rs`: it reads this table, finds each test and fails whe
 | GRBV-016 | Only the centres of the layers are compared, so a solder mask bigger than the copper lines up. | implemented | done | host-test | `more::layers_with_the_same_centre_and_other_sizes_line_up_because_only_the_centre_is_compared` | - |
 | GRBV-017 | A hole outside the copper is reported, and a hole that touches the edge of the copper is inside. | implemented | done | host-test | `viewer::a_hole_that_touches_the_edge_of_the_copper_is_inside_and_one_beyond_it_is_not` | - |
 | GRBV-018 | `check` says when there are no layers to compare instead of claiming that they line up. | implemented | done | host-test | `more::an_empty_layer_is_said_to_have_nothing_and_the_reference_is_the_first_one_with_something` | - |
+| GRBV-038 | `check` does not call empty layers lined up, and a slot outside the copper and a drill file with no hole are findings. | implemented | done | host-test | `doubts::a_slot_outside_the_copper_and_a_drill_file_with_no_hole_are_findings` | The copper is taken by its box. |
+| GRBV-039 | A file that may be cut or has no units is said in the window and refused by `--exact`. | implemented | done | host-test | `doubts::the_window_says_that_a_file_may_be_cut` | The details of a warning are the English ones of the reader. |
+| GRBV-040 | `gap --min` does not pass when copper may be missing from the shapes of a layer. | implemented | done | host-test | `doubts::a_gap_that_is_big_only_because_something_was_left_out_does_not_pass` | - |
 
 ## Robustness and window
 

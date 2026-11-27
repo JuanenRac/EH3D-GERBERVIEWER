@@ -3,7 +3,7 @@
 
 use eh3d_gerberviewer::lang::Lang;
 use eh3d_gerberviewer::window::{Report, Window};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 const BIN: &str = env!("CARGO_BIN_EXE_eh3d-gerberview");
@@ -33,7 +33,7 @@ fn run(args: &[&str]) -> (Option<i32>, String, String) {
     )
 }
 
-fn text(p: &PathBuf) -> &str {
+fn text(p: &Path) -> &str {
     p.to_str().unwrap()
 }
 
