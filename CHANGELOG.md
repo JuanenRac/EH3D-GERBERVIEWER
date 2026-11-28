@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.2] - A supposed coordinate format is reported as a doubt
+
 - **Third-party notices in every package (`docs/THIRD_PARTY_NOTICES`):** the packages of the releases now carry the copyright notices and licence texts of the Rust crates and of the data the program is built with, and the CI fails when a new dependency or licence is not in the file.
 
 - **A supposed coordinate format is a doubt (safety):** a drill or Gerber file whose coordinate format or zero suppression had to be supposed may be at another scale, and nothing said so in the window or the checks. It is now treated like the other doubts: the scene says it, `--exact` refuses it and a gap measured on it is not conclusive. The shared readers are taken at v0.1.4, which gives these two warnings, leaves out zero sets and end positions and tells what it passes over. 1 test.
